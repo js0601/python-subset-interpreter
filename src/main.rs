@@ -22,22 +22,21 @@ fn main() -> Result<(), io::Error> {
     Ok(())
 }
 
-// TODO: consider error handling of flush and read_line
-// TODO: what about multi-line e.g. if or while?
+// TODO: what about multi-line e.g. if, while, def?
 fn repl() -> Result<(), io::Error> {
+    let mut line = String::new();
     loop {
+        line.clear();
         print!(">>> ");
         io::stdout().flush().expect("flush failed");
-        let mut line = String::new();
-        io::stdin().read_line(&mut line)?;
-
-        // TODO: change this to quit on EOF
-        if line.trim() == "quit" {
-            break;
-        }
-
+        match io::stdin().read_line(&mut line) {
+            // quit on EOF (ctrl-D / ctrl-Z)
+            Ok(0) => break,
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        };
         // TODO: might need to trim here?
-        run(line);
+        run(line.clone());
     }
     Ok(())
 }
