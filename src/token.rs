@@ -33,12 +33,6 @@ pub enum TokenType {
     Less,
     LessEqual,
 
-    // literals
-    Identifier(String),
-    String(String),
-    Int(i64),
-    Float(f64),
-
     // keywords
     True,
     False,
@@ -53,6 +47,12 @@ pub enum TokenType {
     Def,
     Return,
     None,
+
+    // literals
+    Identifier(String),
+    String(String),
+    Int(i64),
+    Float(f64),
 
     EndOfFile,
 }
