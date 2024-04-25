@@ -1,3 +1,5 @@
+mod token;
+
 use std::{
     cmp::Ordering,
     env,
