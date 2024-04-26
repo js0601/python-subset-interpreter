@@ -16,6 +16,7 @@ pub enum TokenType {
     Colon,
     LeftParen,
     RightParen,
+    Hashtag,
     // LeftBracket,
     // RightBracket,
     // Comma,
