@@ -2,25 +2,27 @@ use crate::token::*;
 
 pub fn scan(code: String) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
+    // TODO: does lex_start really need to exist?
     let mut lex_start = 0;
     let mut current_idx = 0;
     let mut line = 1;
 
     while current_idx < code.len() {
-        // println!("{current_idx}");
-        // println!("{tokens:?}");
         lex_start = current_idx;
         match scan_token(&code, &mut lex_start, &mut current_idx, &mut line) {
             Ok(x) => match x {
+                // add token
                 Some(t) => {
                     current_idx += t.value.len();
                     tokens.push(t)
                 }
+                // ignore
                 None => {
                     current_idx += 1;
                     continue;
                 }
             },
+            // syntax error (unknown token)
             Err(e) => {
                 println!("Error: {e}");
                 break;
@@ -36,6 +38,7 @@ pub fn scan(code: String) -> Vec<Token> {
     tokens
 }
 
+// TODO: add all the tokens
 fn scan_token(
     code: &str,
     lex_start: &mut usize,
@@ -75,7 +78,9 @@ fn scan_token(
                 line: *line - 1,
             }))
         }
+        // TODO: probably don't ignore all whitespace because of identation
         ' ' | '\r' => Ok(None),
+        // TODO: instead of a String maybe return a custom PyError
         _ => Err("Unknown token".to_string()),
     }
 }
