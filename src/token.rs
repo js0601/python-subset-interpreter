@@ -54,5 +54,6 @@ pub enum TokenType {
     Int(i64),
     Float(f64),
 
+    EndOfLine,
     EndOfFile,
 }
