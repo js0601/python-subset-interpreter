@@ -8,6 +8,8 @@ use std::{
     io::{self, Write},
 };
 
+use scanner::scan;
+
 fn main() -> Result<(), io::Error> {
     let args: Vec<_> = env::args().collect();
     match args.len().cmp(&2) {
@@ -46,5 +48,6 @@ fn repl() -> Result<(), io::Error> {
 
 // TODO: scan, parse and run the code
 fn run(code: String) {
-    println!("scanning, parsing, rearranging\n{code}");
+    let tokens = scan(code);
+    println!("{tokens:#?}");
 }

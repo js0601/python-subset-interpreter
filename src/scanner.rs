@@ -1,6 +1,6 @@
 use crate::token::*;
 
-fn scan(code: String) -> Vec<Token> {
+pub fn scan(code: String) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut lex_start = 0;
     let mut current_idx = 0;
