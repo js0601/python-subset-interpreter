@@ -1,3 +1,4 @@
+mod scanner;
 mod token;
 
 use std::{
