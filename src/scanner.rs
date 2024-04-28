@@ -50,35 +50,16 @@ fn scan_token(
         .nth(*current_idx)
         .expect("This should not fail, since current_idx should not be out of bounds here");
     match current_char {
-        '+' => Ok(Some(Token {
-            token_type: TokenType::Plus,
-            value: "+".to_string(),
-            line: *line,
-        })),
-        '-' => Ok(Some(Token {
-            token_type: TokenType::Minus,
-            value: "-".to_string(),
-            line: *line,
-        })),
-        '*' => Ok(Some(Token {
-            token_type: TokenType::Asterisk,
-            value: "*".to_string(),
-            line: *line,
-        })),
-        '/' => Ok(Some(Token {
-            token_type: TokenType::Slash,
-            value: "/".to_string(),
-            line: *line,
-        })),
+        '+' => Ok(Some(Token::create(TokenType::Plus, *line))),
+        '-' => Ok(Some(Token::create(TokenType::Minus, *line))),
+        '*' => Ok(Some(Token::create(TokenType::Asterisk, *line))),
+        '/' => Ok(Some(Token::create(TokenType::Slash, *line))),
         '\n' => {
             *line += 1;
-            Ok(Some(Token {
-                token_type: TokenType::EndOfLine,
-                value: "\n".to_string(),
-                line: *line - 1,
-            }))
+            Ok(Some(Token::create(TokenType::EndOfLine, *line)))
         }
         // TODO: probably don't ignore all whitespace because of identation
+        // TODO: check for all ignored chars if they work
         ' ' | '\r' => Ok(None),
         // TODO: instead of a String maybe return a custom PyError
         _ => Err("Unknown token".to_string()),
