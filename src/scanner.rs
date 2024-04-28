@@ -1,4 +1,4 @@
-use crate::common::token::*;
+use crate::common::{py_error::*, token::*};
 
 pub fn scan(code: String) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
@@ -34,8 +34,9 @@ pub fn scan(code: String) -> Vec<Token> {
                 }
             },
             // syntax error (unknown token)
+            // TODO: handle error better by returning it from scan and handling it in main
             Err(e) => {
-                println!("Error: {e}");
+                println!("{e}");
                 break;
             }
         }
@@ -52,7 +53,7 @@ fn scan_token(
     current_idx: &mut usize,
     line: u64,
     column: u64,
-) -> Result<Option<Token>, String> {
+) -> Result<Option<Token>, PyError> {
     let current_char = code
         .chars()
         .nth(*current_idx)
@@ -66,7 +67,10 @@ fn scan_token(
         // TODO: probably don't ignore all whitespace because of identation
         // TODO: check for all ignored chars if they work
         ' ' | '\r' => Ok(None),
-        // TODO: instead of a String maybe return a custom PyError
-        _ => Err("Unknown token".to_string()),
+        _ => Err(PyError {
+            msg: format!("Syntax Error: Unknown Token: \"{current_char}\""),
+            line,
+            column,
+        }),
     }
 }
