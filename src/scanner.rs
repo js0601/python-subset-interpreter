@@ -1,4 +1,4 @@
-use crate::token::*;
+use crate::common::token::*;
 
 pub fn scan(code: String) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();

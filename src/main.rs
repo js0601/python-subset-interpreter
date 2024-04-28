@@ -1,5 +1,5 @@
+mod common;
 mod scanner;
-mod token;
 
 use std::{
     cmp::Ordering,
