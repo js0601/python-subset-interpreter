@@ -9,10 +9,13 @@ pub fn scan(code: String) -> Vec<Token> {
 
     while current_idx < code.len() {
         lex_start = current_idx;
-        match scan_token(&code, &mut lex_start, &mut current_idx, &mut line) {
+        match scan_token(&code, &mut lex_start, &mut current_idx, line) {
             Ok(x) => match x {
                 // add token
                 Some(t) => {
+                    if let TokenType::EndOfLine = t.token_type {
+                        line += 1;
+                    }
                     current_idx += t.value.len();
                     tokens.push(t)
                 }
@@ -43,21 +46,18 @@ fn scan_token(
     code: &str,
     lex_start: &mut usize,
     current_idx: &mut usize,
-    line: &mut u64,
+    line: u64,
 ) -> Result<Option<Token>, String> {
     let current_char = code
         .chars()
         .nth(*current_idx)
         .expect("This should not fail, since current_idx should not be out of bounds here");
     match current_char {
-        '+' => Ok(Some(Token::create(TokenType::Plus, *line))),
-        '-' => Ok(Some(Token::create(TokenType::Minus, *line))),
-        '*' => Ok(Some(Token::create(TokenType::Asterisk, *line))),
-        '/' => Ok(Some(Token::create(TokenType::Slash, *line))),
-        '\n' => {
-            *line += 1;
-            Ok(Some(Token::create(TokenType::EndOfLine, *line)))
-        }
+        '+' => Ok(Some(Token::create(TokenType::Plus, line))),
+        '-' => Ok(Some(Token::create(TokenType::Minus, line))),
+        '*' => Ok(Some(Token::create(TokenType::Asterisk, line))),
+        '/' => Ok(Some(Token::create(TokenType::Slash, line))),
+        '\n' => Ok(Some(Token::create(TokenType::EndOfLine, line))),
         // TODO: probably don't ignore all whitespace because of identation
         // TODO: check for all ignored chars if they work
         ' ' | '\r' => Ok(None),
