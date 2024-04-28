@@ -13,14 +13,17 @@ pub fn scan(code: String) -> Vec<Token> {
             Ok(x) => match x {
                 // add token
                 Some(t) => {
+                    // if it's a EoL token increase the line counter
                     if let TokenType::EndOfLine = t.token_type {
                         line += 1;
                     }
+                    // move the index by the lexeme length
                     current_idx += t.value.len();
                     tokens.push(t)
                 }
                 // ignore
                 None => {
+                    // ignored characters are always of length 1
                     current_idx += 1;
                     continue;
                 }
@@ -33,11 +36,7 @@ pub fn scan(code: String) -> Vec<Token> {
         }
     }
 
-    tokens.push(Token {
-        token_type: TokenType::EndOfFile,
-        value: "".to_string(),
-        line,
-    });
+    tokens.push(Token::create(TokenType::EndOfFile, line));
     tokens
 }
 
