@@ -1,7 +1,9 @@
 use crate::common::{py_error::*, token::*};
 
-pub fn scan(code: String) -> Vec<Token> {
+pub fn scan(code: String) -> Option<Vec<Token>> {
     let mut tokens: Vec<Token> = Vec::new();
+    // error flag to decide whether to return Some or None
+    let mut error = false;
     // TODO: does lex_start really need to exist?
     let mut lex_start = 0;
     let mut current_idx = 0;
@@ -30,20 +32,25 @@ pub fn scan(code: String) -> Vec<Token> {
                     // ignored characters are always of length 1
                     current_idx += 1;
                     column += 1;
-                    continue;
                 }
             },
             // syntax error (unknown token)
             // TODO: handle error better by returning it from scan and handling it in main
             Err(e) => {
+                error = true;
+                current_idx += 1;
+                column += 1;
                 println!("{e}");
-                break;
             }
         }
     }
 
     tokens.push(Token::create(TokenType::EndOfFile, line, column));
-    tokens
+    if !error {
+        Some(tokens)
+    } else {
+        None
+    }
 }
 
 // TODO: add all the tokens
@@ -63,6 +70,9 @@ fn scan_token(
         '-' => Ok(Some(Token::create(TokenType::Minus, line, column))),
         '*' => Ok(Some(Token::create(TokenType::Asterisk, line, column))),
         '/' => Ok(Some(Token::create(TokenType::Slash, line, column))),
+        ':' => Ok(Some(Token::create(TokenType::Colon, line, column))),
+        '(' => Ok(Some(Token::create(TokenType::LeftParen, line, column))),
+        ')' => Ok(Some(Token::create(TokenType::RightParen, line, column))),
         '\n' => Ok(Some(Token::create(TokenType::EndOfLine, line, column))),
         // TODO: probably don't ignore all whitespace because of identation
         // TODO: check for all ignored chars if they work

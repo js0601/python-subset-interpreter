@@ -223,6 +223,7 @@ pub enum TokenType {
     // Comma,
     // Point,
     // Percent,
+    EndOfLine,
 
     // double-character
     NotEqual,
@@ -256,6 +257,5 @@ pub enum TokenType {
     Int(i64),
     Float(f64),
 
-    EndOfLine,
     EndOfFile,
 }

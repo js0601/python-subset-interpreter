@@ -40,7 +40,6 @@ fn repl() -> Result<(), io::Error> {
             Ok(_) => (),
             Err(e) => return Err(e),
         };
-        // TODO: might need to trim here?
         run(line.clone());
     }
     Ok(())
@@ -48,6 +47,11 @@ fn repl() -> Result<(), io::Error> {
 
 // TODO: scan, parse and run the code
 fn run(code: String) {
-    let tokens = scan(code);
+    let tokens;
+    if let Some(t) = scan(code) {
+        tokens = t;
+    } else {
+        return;
+    }
     println!("{tokens:#?}");
 }
