@@ -61,11 +61,12 @@ fn scan_token(
     line: u64,
     column: u64,
 ) -> Result<Option<Token>, PyError> {
+    let mut code = code.chars();
     let current_char = code
-        .chars()
         .nth(*current_idx)
         .expect("This should not fail, since current_idx should not be out of bounds here");
     match current_char {
+        // single character
         '+' => Ok(Some(Token::create(TokenType::Plus, line, column))),
         '-' => Ok(Some(Token::create(TokenType::Minus, line, column))),
         '*' => Ok(Some(Token::create(TokenType::Asterisk, line, column))),
@@ -74,9 +75,36 @@ fn scan_token(
         '(' => Ok(Some(Token::create(TokenType::LeftParen, line, column))),
         ')' => Ok(Some(Token::create(TokenType::RightParen, line, column))),
         '\n' => Ok(Some(Token::create(TokenType::EndOfLine, line, column))),
+
+        // double character
+        '!' => match code.next() {
+            Some('=') => Ok(Some(Token::create(TokenType::NotEqual, line, column))),
+            _ => Err(PyError {
+                msg: format!("Syntax Error: Unknown Token: \"{current_char}\""),
+                line,
+                column,
+            }),
+        },
+
+        // single or double character
+        '=' => match code.next() {
+            Some('=') => Ok(Some(Token::create(TokenType::DoubleEqual, line, column))),
+            _ => Ok(Some(Token::create(TokenType::Equal, line, column))),
+        },
+        '>' => match code.next() {
+            Some('=') => Ok(Some(Token::create(TokenType::GreaterEqual, line, column))),
+            _ => Ok(Some(Token::create(TokenType::Greater, line, column))),
+        },
+        '<' => match code.next() {
+            Some('=') => Ok(Some(Token::create(TokenType::LessEqual, line, column))),
+            _ => Ok(Some(Token::create(TokenType::Less, line, column))),
+        },
+
+        // ignored
         // TODO: probably don't ignore all whitespace because of identation
         // TODO: check for all ignored chars if they work
         ' ' | '\r' => Ok(None),
+        // unknown
         _ => Err(PyError {
             msg: format!("Syntax Error: Unknown Token: \"{current_char}\""),
             line,
