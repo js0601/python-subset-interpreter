@@ -52,12 +52,6 @@ impl Token {
                 line,
                 column,
             },
-            TokenType::Hashtag => Self {
-                token_type,
-                value: "#".to_string(),
-                line,
-                column,
-            },
             TokenType::NotEqual => Self {
                 token_type,
                 value: "!=".to_string(),
@@ -217,7 +211,6 @@ pub enum TokenType {
     Colon,
     LeftParen,
     RightParen,
-    Hashtag,
     // LeftBracket,
     // RightBracket,
     // Comma,

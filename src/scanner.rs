@@ -12,7 +12,7 @@ pub fn scan(code: String) -> Option<Vec<Token>> {
 
     while current_idx < code.len() {
         lex_start = current_idx;
-        match scan_token(&code, &mut lex_start, &mut current_idx, line, column) {
+        match scan_token(&code, &mut lex_start, &mut current_idx, line, &mut column) {
             Ok(x) => match x {
                 // add token
                 Some(t) => {
@@ -59,7 +59,7 @@ fn scan_token(
     lex_start: &mut usize,
     current_idx: &mut usize,
     line: u64,
-    column: u64,
+    column: &mut u64,
 ) -> Result<Option<Token>, PyError> {
     let mut code = code.chars();
     let current_char = code
@@ -67,48 +67,59 @@ fn scan_token(
         .expect("This should not fail, since current_idx should not be out of bounds here");
     match current_char {
         // single character
-        '+' => Ok(Some(Token::create(TokenType::Plus, line, column))),
-        '-' => Ok(Some(Token::create(TokenType::Minus, line, column))),
-        '*' => Ok(Some(Token::create(TokenType::Asterisk, line, column))),
-        '/' => Ok(Some(Token::create(TokenType::Slash, line, column))),
-        ':' => Ok(Some(Token::create(TokenType::Colon, line, column))),
-        '(' => Ok(Some(Token::create(TokenType::LeftParen, line, column))),
-        ')' => Ok(Some(Token::create(TokenType::RightParen, line, column))),
-        '\n' => Ok(Some(Token::create(TokenType::EndOfLine, line, column))),
+        '+' => Ok(Some(Token::create(TokenType::Plus, line, *column))),
+        '-' => Ok(Some(Token::create(TokenType::Minus, line, *column))),
+        '*' => Ok(Some(Token::create(TokenType::Asterisk, line, *column))),
+        '/' => Ok(Some(Token::create(TokenType::Slash, line, *column))),
+        ':' => Ok(Some(Token::create(TokenType::Colon, line, *column))),
+        '(' => Ok(Some(Token::create(TokenType::LeftParen, line, *column))),
+        ')' => Ok(Some(Token::create(TokenType::RightParen, line, *column))),
+        '\n' => Ok(Some(Token::create(TokenType::EndOfLine, line, *column))),
 
         // double character
         '!' => match code.next() {
-            Some('=') => Ok(Some(Token::create(TokenType::NotEqual, line, column))),
+            Some('=') => Ok(Some(Token::create(TokenType::NotEqual, line, *column))),
             _ => Err(PyError {
                 msg: format!("Syntax Error: Unknown Token: \"{current_char}\""),
                 line,
-                column,
+                column: *column,
             }),
         },
 
         // single or double character
         '=' => match code.next() {
-            Some('=') => Ok(Some(Token::create(TokenType::DoubleEqual, line, column))),
-            _ => Ok(Some(Token::create(TokenType::Equal, line, column))),
+            Some('=') => Ok(Some(Token::create(TokenType::DoubleEqual, line, *column))),
+            _ => Ok(Some(Token::create(TokenType::Equal, line, *column))),
         },
         '>' => match code.next() {
-            Some('=') => Ok(Some(Token::create(TokenType::GreaterEqual, line, column))),
-            _ => Ok(Some(Token::create(TokenType::Greater, line, column))),
+            Some('=') => Ok(Some(Token::create(TokenType::GreaterEqual, line, *column))),
+            _ => Ok(Some(Token::create(TokenType::Greater, line, *column))),
         },
         '<' => match code.next() {
-            Some('=') => Ok(Some(Token::create(TokenType::LessEqual, line, column))),
-            _ => Ok(Some(Token::create(TokenType::Less, line, column))),
+            Some('=') => Ok(Some(Token::create(TokenType::LessEqual, line, *column))),
+            _ => Ok(Some(Token::create(TokenType::Less, line, *column))),
         },
 
         // ignored
         // TODO: probably don't ignore all whitespace because of identation
-        // TODO: check for all ignored chars if they work
-        ' ' | '\r' => Ok(None),
+        ' ' => Ok(None),
+        '\r' => Ok(None),
+        '#' => {
+            while code
+                .next()
+                .expect("There should always be a newline between the start of a comment and the end of the iterator/file")
+                != '\n'
+            {
+                *current_idx += 1;
+                *column += 1;
+            }
+            Ok(None)
+        }
         // unknown
         _ => Err(PyError {
             msg: format!("Syntax Error: Unknown Token: \"{current_char}\""),
             line,
-            column,
+            column: *column,
         }),
     }
 }
