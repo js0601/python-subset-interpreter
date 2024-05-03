@@ -16,10 +16,16 @@ pub fn scan(code: String) -> Option<Vec<Token>> {
             Ok(x) => match x {
                 // add token
                 Some(t) => {
-                    // move the index by the lexeme length
-                    current_idx += t.value.len();
-                    // increase column counter by same amount
-                    column += t.value.len() as u64;
+                    if let TokenType::String(_) = t.token_type {
+                        // special case because of "" which is not saved in value
+                        current_idx += t.value.len() + 2;
+                        column += t.value.len() as u64 + 2;
+                    } else {
+                        // move the index by the lexeme length
+                        current_idx += t.value.len();
+                        // increase column counter by same amount
+                        column += t.value.len() as u64;
+                    }
                     // if it's a EoL token increase the line counter and reset column counter
                     if let TokenType::EndOfLine = t.token_type {
                         line += 1;
@@ -100,6 +106,32 @@ fn scan_token(
             _ => Ok(Some(Token::create(TokenType::Less, line, *column))),
         },
 
+        //literals
+        '"' => {
+            // used in case of unterminated string for going to next line and avoid scanning other characters after the string start
+            let mut err_idx = *current_idx;
+            let mut text = String::new();
+            for c in code {
+                err_idx += 1;
+                match c {
+                    // end string
+                    '"' => break,
+                    // missing " at end
+                    '\n' => {
+                        // -1 so it points at the newline
+                        *current_idx = err_idx - 1;
+                        return Err(PyError {
+                            msg: format!("SyntaxError: Unterminated String: \"{text}"),
+                            line,
+                            column: *column,
+                        });
+                    }
+                    _ => text.push(c),
+                }
+            }
+            Ok(Some(Token::create(TokenType::String(text), line, *column)))
+        }
+
         // ignored
         // TODO: probably don't ignore all whitespace because of identation
         ' ' => Ok(None),
@@ -115,9 +147,10 @@ fn scan_token(
             }
             Ok(None)
         }
+
         // unknown
         _ => Err(PyError {
-            msg: format!("Syntax Error: Unknown Token: \"{current_char}\""),
+            msg: format!("SyntaxError: Unknown Token: {current_char}"),
             line,
             column: *column,
         }),
