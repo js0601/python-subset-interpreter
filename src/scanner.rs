@@ -106,9 +106,11 @@ fn scan_token(
             _ => Ok(Some(Token::create(TokenType::Less, line, *column))),
         },
 
-        //literals
+        // literals
+        // TODO: extract these into seperate functions for readability
+        // Strings
         '"' => {
-            // used in case of unterminated string for going to next line and avoid scanning other characters after the string start
+            // used for still moving the index in case of error
             let mut err_idx = *current_idx;
             let mut text = String::new();
             for c in code {
@@ -130,6 +132,78 @@ fn scan_token(
                 }
             }
             Ok(Some(Token::create(TokenType::String(text), line, *column)))
+        }
+        // Numbers
+        '0'..='9' => {
+            // used for still moving the idx in case of error
+            let mut err_idx = *current_idx;
+            // used so error points at the invalid literal
+            let mut err_col = *column;
+            // used so there can only be one . in the number
+            let mut is_float = false;
+            let mut number = current_char.to_string();
+            while let Some(c) = code.next() {
+                err_idx += 1;
+                err_col += 1;
+                match c {
+                    ' ' | '\n' | '+' | '-' | '*' | '/' => break,
+                    '0'..='9' => number.push(c),
+                    '.' => {
+                        if is_float {
+                            *current_idx = err_idx - 1;
+                            return Err(PyError {
+                                msg: format!(
+                                    "SyntaxError: Float has more than one point: {number}{c}"
+                                ),
+                                line,
+                                column: err_col,
+                            });
+                        } else {
+                            let next_char = code.next();
+                            match next_char {
+                                Some('0'..='9') => {
+                                    is_float = true;
+                                    number.push('.');
+                                    // TODO: don't just unwrap here
+                                    number.push(next_char.unwrap());
+                                }
+                                _ => {
+                                    // TODO: maybe not -1
+                                    *current_idx = err_idx - 1;
+                                    // TODO: better error message here
+                                    return Err(PyError { msg: format!("SyntaxError: Floating Point not followed by number: {number}{c}{next_char:?}"), line , column: err_col });
+                                }
+                            }
+                        }
+                    }
+                    _ => {
+                        *current_idx = err_idx - 1;
+                        return Err(PyError {
+                            msg: format!("SyntaxError: Invalid Decimal Literal: {c}"),
+                            line,
+                            column: err_col,
+                        });
+                    }
+                }
+            }
+
+            if is_float {
+                Ok(Some(Token::create(
+                    TokenType::Float(number.parse::<f64>().expect(
+                        "This should never fail, because number should only contain numbers",
+                    )),
+                    line,
+                    *column,
+                )))
+            } else {
+                Ok(Some(Token::create(
+                    TokenType::Int(number.parse::<u64>().expect(
+                        "This should never fail, because number should only contain numbers",
+                    )),
+                    line,
+                    *column,
+                )))
+            }
         }
 
         // ignored

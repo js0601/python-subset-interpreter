@@ -247,7 +247,7 @@ pub enum TokenType {
     // literals
     Identifier(String),
     String(String),
-    Int(i64),
+    Int(u64), // this is only ever positive, bc negative numbers are built by the parser
     Float(f64),
 
     EndOfFile,
