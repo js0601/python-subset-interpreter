@@ -167,7 +167,7 @@ impl Token {
                 column,
             },
             TokenType::String(ref s) => Self {
-                value: s.to_string(),
+                value: format!("\"{s}\""),
                 token_type,
                 line,
                 column,

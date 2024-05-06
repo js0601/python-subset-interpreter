@@ -16,10 +16,8 @@ pub fn scan(code: String) -> Option<Vec<Token>> {
             Ok(x) => match x {
                 // add token
                 Some(t) => {
-                    if let TokenType::String(_) = t.token_type {
-                        // special case because of "" which is not saved in value
-                        current_idx += t.value.len() + 2;
-                        column += t.value.len() as u64 + 2;
+                    // special case because idx and col get updated inside function (to circumvent weird trimming of trailing zeros by rust)
+                    if let TokenType::Float(_) = t.token_type {
                     } else {
                         // move the index by the lexeme length
                         current_idx += t.value.len();
@@ -159,23 +157,29 @@ fn scan_token(
                                 column: err_col,
                             });
                         } else {
-                            let next_char = code.next();
-                            match next_char {
+                            // see if there is actually a number after the floating point
+                            let char_after_dot = code.next();
+                            match char_after_dot {
                                 Some('0'..='9') => {
                                     is_float = true;
                                     number.push('.');
                                     // TODO: don't just unwrap here
-                                    number.push(next_char.unwrap());
+                                    number.push(char_after_dot.unwrap());
                                 }
                                 _ => {
-                                    // TODO: maybe not -1
-                                    *current_idx = err_idx - 1;
-                                    // TODO: better error message here
-                                    return Err(PyError { msg: format!("SyntaxError: Floating Point not followed by number: {number}{c}{next_char:?}"), line , column: err_col });
+                                    *current_idx = err_idx;
+                                    // TODO: error msg could show what follows instead
+                                    return Err(PyError {
+                                        msg: "SyntaxError: Floating Point not followed by number"
+                                            .to_string(),
+                                        line,
+                                        column: err_col,
+                                    });
                                 }
                             }
                         }
                     }
+                    // not a valid number
                     _ => {
                         *current_idx = err_idx - 1;
                         return Err(PyError {
@@ -188,12 +192,15 @@ fn scan_token(
             }
 
             if is_float {
+                *current_idx += number.len();
+                *column += number.len() as u64;
                 Ok(Some(Token::create(
                     TokenType::Float(number.parse::<f64>().expect(
                         "This should never fail, because number should only contain numbers",
                     )),
                     line,
-                    *column,
+                    // still use old column for token start
+                    *column - number.len() as u64,
                 )))
             } else {
                 Ok(Some(Token::create(
@@ -208,6 +215,7 @@ fn scan_token(
 
         // ignored
         // TODO: probably don't ignore all whitespace because of identation
+        // TODO: \t not to be ignored (probably need a "block" token)
         ' ' => Ok(None),
         '\r' => Ok(None),
         '#' => {
