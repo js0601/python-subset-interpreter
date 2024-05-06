@@ -238,3 +238,19 @@ fn scan_token(
         }),
     }
 }
+
+fn build_string(
+    code: impl Iterator<Item = char>,
+    current_idx: &mut usize,
+    line: u64,
+    column: &mut u64,
+) {
+}
+
+fn build_number(
+    code: impl Iterator<Item = char>,
+    current_idx: &mut usize,
+    line: u64,
+    column: &mut u64,
+) {
+}
