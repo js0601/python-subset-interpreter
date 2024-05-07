@@ -105,113 +105,10 @@ fn scan_token(
         },
 
         // literals
-        // TODO: extract these into seperate functions for readability
         // Strings
-        '"' => {
-            // used for still moving the index in case of error
-            let mut err_idx = *current_idx;
-            let mut text = String::new();
-            for c in code {
-                err_idx += 1;
-                match c {
-                    // end string
-                    '"' => break,
-                    // missing " at end
-                    '\n' => {
-                        // -1 so it points at the newline
-                        *current_idx = err_idx - 1;
-                        return Err(PyError {
-                            msg: format!("SyntaxError: Unterminated String: \"{text}"),
-                            line,
-                            column: *column,
-                        });
-                    }
-                    _ => text.push(c),
-                }
-            }
-            Ok(Some(Token::create(TokenType::String(text), line, *column)))
-        }
+        '"' => build_string(code, current_idx, line, column),
         // Numbers
-        '0'..='9' => {
-            // used for still moving the idx in case of error
-            let mut err_idx = *current_idx;
-            // used so error points at the invalid literal
-            let mut err_col = *column;
-            // used so there can only be one . in the number
-            let mut is_float = false;
-            let mut number = current_char.to_string();
-            while let Some(c) = code.next() {
-                err_idx += 1;
-                err_col += 1;
-                match c {
-                    ' ' | '\n' | '+' | '-' | '*' | '/' => break,
-                    '0'..='9' => number.push(c),
-                    '.' => {
-                        if is_float {
-                            *current_idx = err_idx - 1;
-                            return Err(PyError {
-                                msg: format!(
-                                    "SyntaxError: Float has more than one point: {number}{c}"
-                                ),
-                                line,
-                                column: err_col,
-                            });
-                        } else {
-                            // see if there is actually a number after the floating point
-                            let char_after_dot = code.next();
-                            match char_after_dot {
-                                Some('0'..='9') => {
-                                    is_float = true;
-                                    number.push('.');
-                                    // TODO: don't just unwrap here
-                                    number.push(char_after_dot.unwrap());
-                                }
-                                _ => {
-                                    *current_idx = err_idx;
-                                    // TODO: error msg could show what follows instead
-                                    return Err(PyError {
-                                        msg: "SyntaxError: Floating Point not followed by number"
-                                            .to_string(),
-                                        line,
-                                        column: err_col,
-                                    });
-                                }
-                            }
-                        }
-                    }
-                    // not a valid number
-                    _ => {
-                        *current_idx = err_idx - 1;
-                        return Err(PyError {
-                            msg: format!("SyntaxError: Invalid Decimal Literal: {c}"),
-                            line,
-                            column: err_col,
-                        });
-                    }
-                }
-            }
-
-            if is_float {
-                *current_idx += number.len();
-                *column += number.len() as u64;
-                Ok(Some(Token::create(
-                    TokenType::Float(number.parse::<f64>().expect(
-                        "This should never fail, because number should only contain numbers",
-                    )),
-                    line,
-                    // still use old column for token start
-                    *column - number.len() as u64,
-                )))
-            } else {
-                Ok(Some(Token::create(
-                    TokenType::Int(number.parse::<u64>().expect(
-                        "This should never fail, because number should only contain numbers",
-                    )),
-                    line,
-                    *column,
-                )))
-            }
-        }
+        '0'..='9' => build_number(code, current_char, current_idx, line, column),
 
         // ignored
         // TODO: probably don't ignore all whitespace because of identation
@@ -244,13 +141,119 @@ fn build_string(
     current_idx: &mut usize,
     line: u64,
     column: &mut u64,
-) {
+) -> Result<Option<Token>, PyError> {
+    // used for still moving the index in case of error
+    let mut err_idx = *current_idx;
+    let mut text = String::new();
+    for c in code {
+        err_idx += 1;
+        match c {
+            // end string
+            '"' => break,
+            // missing " at end
+            '\n' => {
+                // -1 so it points at the newline
+                *current_idx = err_idx - 1;
+                return Err(PyError {
+                    msg: format!("SyntaxError: Unterminated String: \"{text}"),
+                    line,
+                    column: *column,
+                });
+            }
+            _ => text.push(c),
+        }
+    }
+    Ok(Some(Token::create(TokenType::String(text), line, *column)))
 }
 
 fn build_number(
-    code: impl Iterator<Item = char>,
+    mut code: impl Iterator<Item = char>,
+    current_char: char,
     current_idx: &mut usize,
     line: u64,
     column: &mut u64,
-) {
+) -> Result<Option<Token>, PyError> {
+    // used for still moving the idx in case of error
+    let mut err_idx = *current_idx;
+    // used so error points at the invalid literal
+    let mut err_col = *column;
+    // used so there can only be one . in the number
+    let mut is_float = false;
+    let mut number = current_char.to_string();
+    while let Some(c) = code.next() {
+        err_idx += 1;
+        err_col += 1;
+        match c {
+            ' ' | '\n' | '+' | '-' | '*' | '/' => break,
+            '0'..='9' => number.push(c),
+            '.' => {
+                // was there already a floating point?
+                if is_float {
+                    *current_idx = err_idx - 1;
+                    return Err(PyError {
+                        msg: format!("SyntaxError: Float has more than one point: {number}{c}"),
+                        line,
+                        column: err_col,
+                    });
+                } else {
+                    // see if there is actually a number after the floating point
+                    let char_after_dot = code.next();
+                    match char_after_dot {
+                        Some('0'..='9') => {
+                            is_float = true;
+                            number.push('.');
+                            // TODO: don't just unwrap here
+                            number.push(char_after_dot.expect("This should never fail, because char_after_dot can only be a number here"));
+                        }
+                        _ => {
+                            *current_idx = err_idx;
+                            // TODO: error msg could show what follows instead
+                            return Err(PyError {
+                                msg: "SyntaxError: Floating Point not followed by number"
+                                    .to_string(),
+                                line,
+                                column: err_col,
+                            });
+                        }
+                    }
+                }
+            }
+            // not a valid number
+            _ => {
+                *current_idx = err_idx - 1;
+                return Err(PyError {
+                    msg: format!("SyntaxError: Invalid Decimal Literal: {c}"),
+                    line,
+                    column: err_col,
+                });
+            }
+        }
+    }
+
+    // parse number into f64 or u64 depending on is_float
+    if is_float {
+        // update the idx here because Rust trims trailing zeros, e.g. 2.0 becomes 2
+        *current_idx += number.len();
+        *column += number.len() as u64;
+        Ok(Some(Token::create(
+            TokenType::Float(
+                number
+                    .parse::<f64>()
+                    .expect("This should never fail, because number should only contain numbers"),
+            ),
+            line,
+            // still use old column for token start
+            *column - number.len() as u64,
+        )))
+    } else {
+        Ok(Some(Token::create(
+            TokenType::Int(
+                number
+                    .parse::<u64>()
+                    .expect("This should never fail, because number should only contain numbers"),
+            ),
+            line,
+            *column,
+        )))
+    }
 }
