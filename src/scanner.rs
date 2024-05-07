@@ -105,10 +105,9 @@ fn scan_token(
         },
 
         // literals
-        // Strings
         '"' => build_string(code, current_idx, line, column),
-        // Numbers
         '0'..='9' => build_number(code, current_char, current_idx, line, column),
+        '_' | 'a'..='z' | 'A'..='Z' => Ok(Some(build_identifier(code, current_char, line, column))),
 
         // ignored
         // TODO: probably don't ignore all whitespace because of identation
@@ -184,7 +183,7 @@ fn build_number(
         err_idx += 1;
         err_col += 1;
         match c {
-            ' ' | '\n' | '+' | '-' | '*' | '/' => break,
+            ' ' | '\n' | '+' | '-' | '*' | '/' | ':' | '<' | '>' | '=' | '!' => break,
             '0'..='9' => number.push(c),
             '.' => {
                 // was there already a floating point?
@@ -255,5 +254,40 @@ fn build_number(
             line,
             *column,
         )))
+    }
+}
+
+fn build_identifier(
+    code: impl Iterator<Item = char>,
+    current_char: char,
+    line: u64,
+    column: &mut u64,
+) -> Token {
+    let mut text = current_char.to_string();
+    for c in code {
+        if c.is_alphanumeric() || c == '_' {
+            text.push(c)
+        } else {
+            break;
+        }
+    }
+    let token_type = check_keywords(&text).unwrap_or(TokenType::Identifier(text));
+    Token::create(token_type, line, *column)
+}
+
+fn check_keywords(text: &str) -> Option<TokenType> {
+    match text {
+        "True" => Some(TokenType::True),
+        "False" => Some(TokenType::False),
+        "not" => Some(TokenType::Not),
+        "and" => Some(TokenType::And),
+        "or" => Some(TokenType::Or),
+        "if" => Some(TokenType::If),
+        "else" => Some(TokenType::Else),
+        "while" => Some(TokenType::While),
+        "def" => Some(TokenType::Def),
+        "return" => Some(TokenType::Return),
+        "None" => Some(TokenType::None),
+        _ => None,
     }
 }
