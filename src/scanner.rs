@@ -165,6 +165,7 @@ fn build_string(
     Ok(Some(Token::create(TokenType::String(text), line, *column)))
 }
 
+// TODO: very big, might want to refactor
 fn build_number(
     mut code: impl Iterator<Item = char>,
     current_char: char,
@@ -183,7 +184,8 @@ fn build_number(
         err_idx += 1;
         err_col += 1;
         match c {
-            ' ' | '\n' | '+' | '-' | '*' | '/' | ':' | '<' | '>' | '=' | '!' => break,
+            ' ' | '\n' | '+' | '-' | '*' | '/' | ':' | '<' | '>' | '=' | '!' | '(' | ')' | '['
+            | ']' | '{' | '}' => break,
             '0'..='9' => number.push(c),
             '.' => {
                 // was there already a floating point?
@@ -291,3 +293,5 @@ fn check_keywords(text: &str) -> Option<TokenType> {
         _ => None,
     }
 }
+
+// TODO: add some unit tests for every token type
