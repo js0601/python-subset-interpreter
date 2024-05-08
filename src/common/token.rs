@@ -1,3 +1,57 @@
+// TODO: implement commented types
+#[derive(Debug)]
+pub enum TokenType {
+    // single-character
+    Plus,
+    Minus,
+    Asterisk,
+    Slash,
+    Colon,
+    LeftParen,
+    RightParen,
+    // LeftBracket,
+    // RightBracket,
+    // Comma,
+    // Point,
+    // Percent,
+    EndOfLine,
+
+    // double-character
+    NotEqual,
+
+    // single- or double-character
+    Equal,
+    DoubleEqual,
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
+
+    // keywords
+    True,
+    False,
+    Not,
+    And,
+    Or,
+    If,
+    // Elif,
+    Else,
+    While,
+    // For,
+    Def,
+    Return,
+    None,
+
+    // literals
+    Identifier(String),
+    String(String),
+    Int(u64), // this is only ever positive, bc negative numbers are built by the parser
+    Float(f64),
+
+    Block, // indentation
+    EndOfFile,
+}
+
 #[derive(Debug)]
 pub struct Token {
     pub token_type: TokenType,
@@ -190,6 +244,12 @@ impl Token {
                 line,
                 column,
             },
+            TokenType::Block => Self {
+                token_type,
+                value: "    ".to_string(),
+                line,
+                column,
+            },
             TokenType::EndOfFile => Self {
                 token_type,
                 value: "".to_string(),
@@ -198,57 +258,4 @@ impl Token {
             },
         }
     }
-}
-
-// TODO: implement commented types
-#[derive(Debug)]
-pub enum TokenType {
-    // single-character
-    Plus,
-    Minus,
-    Asterisk,
-    Slash,
-    Colon,
-    LeftParen,
-    RightParen,
-    // LeftBracket,
-    // RightBracket,
-    // Comma,
-    // Point,
-    // Percent,
-    EndOfLine,
-
-    // double-character
-    NotEqual,
-
-    // single- or double-character
-    Equal,
-    DoubleEqual,
-    Greater,
-    GreaterEqual,
-    Less,
-    LessEqual,
-
-    // keywords
-    True,
-    False,
-    Not,
-    And,
-    Or,
-    If,
-    // Elif,
-    Else,
-    While,
-    // For,
-    Def,
-    Return,
-    None,
-
-    // literals
-    Identifier(String),
-    String(String),
-    Int(u64), // this is only ever positive, bc negative numbers are built by the parser
-    Float(f64),
-
-    EndOfFile,
 }

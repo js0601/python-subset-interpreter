@@ -104,11 +104,23 @@ fn scan_token(
         '0'..='9' => build_number(code, current_char, current_idx, line, column),
         '_' | 'a'..='z' | 'A'..='Z' => Ok(Some(build_identifier(code, current_char, line, column))),
 
-        // ignored
-        // TODO: probably don't ignore all whitespace because of identation
-        // TODO: \t not to be ignored (probably need a "block" token)
-        ' ' => Ok(None),
+        // ignored or identantion
         '\r' => Ok(None),
+        /* TODO:
+            this has some weird behavior in some cases e.g. the repl:
+            e.g. the input "[tab]123123" works correctly when written in a file with helix or vim
+            but written in the repl or with nano it completely skips the first 123 and the second 123 is at column 5 for some reason
+        */
+        '\t' => Ok(Some(Token::create(TokenType::Block, line, *column))),
+        ' ' => {
+            // if next three chars are all whitespace treat them as a tab, otherwise just ignore them
+            let next_three: String = code.take(3).collect();
+            match next_three.as_str() {
+                "   " => Ok(Some(Token::create(TokenType::Block, line, *column))),
+                _ => Ok(None),
+            }
+        }
+        // comments
         '#' => {
             while code
                 .next()
