@@ -4,15 +4,12 @@ pub fn scan(code: String) -> Option<Vec<Token>> {
     let mut tokens: Vec<Token> = Vec::new();
     // error flag to decide whether to return Some or None
     let mut error = false;
-    // TODO: does lex_start really need to exist?
-    let mut lex_start = 0;
     let mut current_idx = 0;
     let mut line = 1;
     let mut column = 1;
 
     while current_idx < code.len() {
-        lex_start = current_idx;
-        match scan_token(&code, &mut lex_start, &mut current_idx, line, &mut column) {
+        match scan_token(&code, &mut current_idx, line, &mut column) {
             Ok(x) => match x {
                 // add token
                 Some(t) => {
@@ -57,10 +54,8 @@ pub fn scan(code: String) -> Option<Vec<Token>> {
     }
 }
 
-// TODO: add all the tokens
 fn scan_token(
     code: &str,
-    lex_start: &mut usize,
     current_idx: &mut usize,
     line: u64,
     column: &mut u64,
