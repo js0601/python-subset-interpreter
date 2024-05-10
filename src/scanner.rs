@@ -1,3 +1,6 @@
+// TODO: add some doc
+// TODO: add unit tests
+
 use crate::common::{py_error::*, token::*};
 
 pub fn scan(code: String) -> Option<Vec<Token>> {
@@ -106,12 +109,15 @@ fn scan_token(
 
         // ignored or identantion
         '\r' => Ok(None),
-        /* TODO:
-            this has some weird behavior in some cases e.g. the repl:
-            e.g. the input "[tab]123123" works correctly when written in a file with helix or vim
-            but written in the repl or with nano it completely skips the first 123 and the second 123 is at column 5 for some reason
-        */
-        '\t' => Ok(Some(Token::create(TokenType::Block, line, *column))),
+        '\t' => {
+            /* NOTE: technically this could cause an overflow error, BUT only if the tab is at the very beginning of the code
+            this should never happen, since a block only comes after other code, never at the start
+            */
+            *current_idx = current_idx
+                .checked_sub(3)
+                .expect("Please make sure there are no tabs at the beginning of the file.");
+            Ok(Some(Token::create(TokenType::Block, line, *column)))
+        }
         ' ' => {
             // if next three chars are all whitespace treat them as a tab, otherwise just ignore them
             let next_three: String = code.take(3).collect();
@@ -210,7 +216,6 @@ fn build_number(
                         Some('0'..='9') => {
                             is_float = true;
                             number.push('.');
-                            // TODO: don't just unwrap here
                             number.push(char_after_dot.expect("This should never fail, because char_after_dot can only be a number here"));
                         }
                         _ => {
@@ -300,5 +305,3 @@ fn check_keywords(text: &str) -> Option<TokenType> {
         _ => None,
     }
 }
-
-// TODO: add some unit tests for every token type
