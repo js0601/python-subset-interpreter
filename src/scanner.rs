@@ -11,7 +11,7 @@ pub fn scan(code: String) -> Option<Vec<Token>> {
     let mut line = 1;
     let mut column = 1;
 
-    while current_idx < code.len() {
+    while current_idx < code.chars().count() {
         match scan_token(&code, &mut current_idx, line, &mut column) {
             Ok(x) => match x {
                 // add token
@@ -20,9 +20,9 @@ pub fn scan(code: String) -> Option<Vec<Token>> {
                     if let TokenType::Float(_) = t.token_type {
                     } else {
                         // move the index by the lexeme length
-                        current_idx += t.value.len();
+                        current_idx += t.value.chars().count();
                         // increase column counter by same amount
-                        column += t.value.len() as u64;
+                        column += t.value.chars().count() as u64;
                     }
                     // if it's a EoL token increase the line counter and reset column counter
                     if let TokenType::EndOfLine = t.token_type {
@@ -298,6 +298,7 @@ fn check_keywords(text: &str) -> Option<TokenType> {
         "and" => Some(TokenType::And),
         "or" => Some(TokenType::Or),
         "if" => Some(TokenType::If),
+        "elif" => Some(TokenType::Elif),
         "else" => Some(TokenType::Else),
         "while" => Some(TokenType::While),
         "def" => Some(TokenType::Def),
