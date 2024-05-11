@@ -11,7 +11,7 @@ pub enum TokenType {
     RightParen,
     // LeftBracket,
     // RightBracket,
-    // Comma,
+    Comma,
     // Point,
     // Percent,
     EndOfLine,
@@ -103,6 +103,12 @@ impl Token {
             TokenType::RightParen => Self {
                 token_type,
                 value: ")".to_string(),
+                line,
+                column,
+            },
+            TokenType::Comma => Self {
+                token_type,
+                value: ",".to_string(),
                 line,
                 column,
             },

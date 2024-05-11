@@ -76,6 +76,7 @@ fn scan_token(
         ':' => Ok(Some(Token::create(TokenType::Colon, line, *column))),
         '(' => Ok(Some(Token::create(TokenType::LeftParen, line, *column))),
         ')' => Ok(Some(Token::create(TokenType::RightParen, line, *column))),
+        ',' => Ok(Some(Token::create(TokenType::Comma, line, *column))),
         '\n' => Ok(Some(Token::create(TokenType::EndOfLine, line, *column))),
 
         // double character
@@ -198,7 +199,7 @@ fn build_number(
         err_col += 1;
         match c {
             ' ' | '\n' | '+' | '-' | '*' | '/' | ':' | '<' | '>' | '=' | '!' | '(' | ')' | '['
-            | ']' | '{' | '}' => break,
+            | ']' | '{' | '}' | ',' => break,
             '0'..='9' => number.push(c),
             '.' => {
                 // was there already a floating point?
