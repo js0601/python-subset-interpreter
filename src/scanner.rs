@@ -1,17 +1,38 @@
 // TODO: add some doc
 // TODO: add unit tests
 
+use std::cmp::Ordering;
+
 use crate::common::{py_error::*, token::*};
 
 pub fn scan(code: String) -> Option<Vec<Token>> {
     let mut tokens: Vec<Token> = Vec::new();
     // error flag to decide whether to return Some or None
     let mut error = false;
+    let mut indent_stack = vec![0];
     let mut current_idx = 0;
     let mut line = 1;
     let mut column = 1;
 
     while current_idx < code.chars().count() {
+        // calc the indent at every line start
+        if column == 1 {
+            match scan_indent(
+                &code,
+                &mut tokens,
+                &mut indent_stack,
+                &mut current_idx,
+                line,
+                &mut column,
+            ) {
+                Ok(_) => (),
+                // indentation error
+                Err(e) => {
+                    error = true;
+                    println!("{e}");
+                }
+            }
+        }
         match scan_token(&code, &mut current_idx, line, &mut column) {
             Ok(x) => match x {
                 // add token
@@ -49,12 +70,81 @@ pub fn scan(code: String) -> Option<Vec<Token>> {
         }
     }
 
+    // push Dedent on stack for every Indent above 0
+    while let Some(i) = indent_stack.pop() {
+        if i > 0 {
+            tokens.push(Token::create(TokenType::Dedent, line, column));
+        }
+    }
     tokens.push(Token::create(TokenType::EndOfFile, line, column));
     if !error {
         Some(tokens)
     } else {
         None
     }
+}
+
+fn scan_indent(
+    code: &str,
+    tokens: &mut Vec<Token>,
+    indent_stack: &mut Vec<u64>,
+    current_idx: &mut usize,
+    line: u64,
+    column: &mut u64,
+) -> Result<(), PyError> {
+    // calc the current line's indentation by counting whitespaces and tabs until first non-blank char shows up
+    let mut line_indent = 0;
+    for c in code.chars().skip(*current_idx) {
+        match c {
+            /* TODO: currently counts tab as one indent but this isn't how it should be (I think)
+            rn "[tab]abc" and " abc" have the same indentation, but don't look the part in the source file
+            */
+            ' ' | '\t' => {
+                line_indent += 1;
+                *current_idx += 1;
+                *column += 1;
+            }
+            '#' => return Ok(()), // ignore indent on comment lines
+            _ => break,
+        }
+    }
+
+    // check for matching indent in indent stack
+    let mut current_indent = indent_stack.pop().expect(
+        "This should never fail, because there should always be a number on this stack atp.",
+    );
+    match line_indent.cmp(&current_indent) {
+        // keep looking for equal indent, if not found throw IndentationError
+        Ordering::Less => loop {
+            if line_indent == current_indent {
+                indent_stack.push(current_indent);
+                break;
+            }
+            if let Some(i) = indent_stack.pop() {
+                tokens.push(Token::create(TokenType::Dedent, line, *column));
+                current_indent = i;
+            } else {
+                // if there was no matching indent found, return an error
+                return Err(PyError {
+                    msg: "IndentationError: inconsistent dedent".to_string(),
+                    line,
+                    column: *column,
+                });
+            }
+        },
+        // do nothing
+        Ordering::Equal => {
+            indent_stack.push(current_indent);
+        }
+        // push line indent on stack and generate Indent
+        Ordering::Greater => {
+            indent_stack.push(current_indent);
+            indent_stack.push(line_indent);
+            tokens.push(Token::create(TokenType::Indent, line, *column));
+        }
+    }
+
+    Ok(())
 }
 
 fn scan_token(
@@ -83,7 +173,7 @@ fn scan_token(
         '!' => match code.next() {
             Some('=') => Ok(Some(Token::create(TokenType::NotEqual, line, *column))),
             _ => Err(PyError {
-                msg: format!("Syntax Error: Unknown Token: \"{current_char}\""),
+                msg: format!("SyntaxError: Unknown Token: \"{current_char}\""),
                 line,
                 column: *column,
             }),
@@ -108,25 +198,8 @@ fn scan_token(
         '0'..='9' => build_number(code, current_char, current_idx, line, column),
         '_' | 'a'..='z' | 'A'..='Z' => Ok(Some(build_identifier(code, current_char, line, column))),
 
-        // ignored or identantion
-        '\r' => Ok(None),
-        '\t' => {
-            /* NOTE: technically this could cause an overflow error, BUT only if the tab is at the very beginning of the code
-            this should never happen, since a block only comes after other code, never at the start
-            */
-            *current_idx = current_idx
-                .checked_sub(3)
-                .expect("Please make sure there are no tabs at the beginning of the file.");
-            Ok(Some(Token::create(TokenType::Block, line, *column)))
-        }
-        ' ' => {
-            // if next three chars are all whitespace treat them as a tab, otherwise just ignore them
-            let next_three: String = code.take(3).collect();
-            match next_three.as_str() {
-                "   " => Ok(Some(Token::create(TokenType::Block, line, *column))),
-                _ => Ok(None),
-            }
-        }
+        // ignored
+        '\r' | '\t' | ' ' => Ok(None),
         // comments
         '#' => {
             while code

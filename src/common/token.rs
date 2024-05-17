@@ -48,7 +48,8 @@ pub enum TokenType {
     Int(u64), // this is only ever positive, bc negative numbers are built by the parser
     Float(f64),
 
-    Block, // indentation
+    Indent,
+    Dedent,
     EndOfFile,
 }
 
@@ -256,9 +257,15 @@ impl Token {
                 line,
                 column,
             },
-            TokenType::Block => Self {
+            TokenType::Indent => Self {
                 token_type,
-                value: "    ".to_string(),
+                value: "".to_string(),
+                line,
+                column,
+            },
+            TokenType::Dedent => Self {
+                token_type,
+                value: "".to_string(),
                 line,
                 column,
             },
