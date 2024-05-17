@@ -30,6 +30,7 @@ pub fn scan(code: String) -> Option<Vec<Token>> {
                 Err(e) => {
                     error = true;
                     println!("{e}");
+                    break; // after indentation error, scanner should stop, otherwise every new correct dedent is an error since the stack is gone
                 }
             }
         }
