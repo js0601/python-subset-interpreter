@@ -1,5 +1,3 @@
-use std::fmt;
-
 pub enum Expr {
     Unary(UnOp, Box<Expr>),
     Binary(Box<Expr>, BiOp, Box<Expr>),
@@ -37,6 +35,8 @@ pub enum Lit {
 ////////////////////////////////////////////////////
 // debug trait implementations for nicer printing //
 ////////////////////////////////////////////////////
+
+use std::fmt;
 
 impl fmt::Debug for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
