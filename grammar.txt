@@ -1,9 +1,12 @@
-expression    -> unary | binary | grouping | literal
+// in order of precedence from lowest to highest
 
-unary         -> ("-" | "not") expression
-binary        -> expression operator expression
-grouping      -> "(" expression ")"
-literal       -> NUMBER | STRING | "True" | "False" | "None"
-
-operator      -> "+" | "-" | "*" | "/"
-              | "==" | "!=" | "<" | "<=" | ">" | ">="
+expr          -> equality
+equality      -> comparison (("==" | "!=") comparison)*
+comparison    -> term ((">" | ">=" | "<" | "<=") term)*
+term          -> factor (("+" | "-") factor)*
+factor        -> unary (("*" | "/") unary)*
+unary         -> ("-" | "not") unary
+              | primary
+primary       -> NUMBER | STRING
+              | "True" | "False" | "None"
+              | "(" expr ")"
