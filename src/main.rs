@@ -1,4 +1,5 @@
 mod common;
+mod parser;
 mod scanner;
 
 use std::{
@@ -7,8 +8,6 @@ use std::{
     fs::read_to_string,
     io::{self, Write},
 };
-
-use scanner::scan;
 
 fn main() -> Result<(), io::Error> {
     let args: Vec<_> = env::args().collect();
@@ -48,14 +47,17 @@ fn repl() -> Result<(), io::Error> {
 // TODO: scan, parse and run the code
 fn run(code: String) {
     let tokens;
-    if let Some(t) = scan(code) {
+    if let Some(t) = scanner::scan(code) {
         tokens = t;
     } else {
         return;
     }
 
     // print tokens
-    for t in tokens {
+    for t in &tokens {
         println!("{:?}, {}, {}", t.token_type, t.line, t.column);
     }
+
+    let e = parser::parse(tokens);
+    println!("{e:?}");
 }
