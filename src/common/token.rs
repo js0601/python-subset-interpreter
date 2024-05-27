@@ -1,5 +1,5 @@
 // TODO: implement commented types
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum TokenType {
     // single-character
     Plus,
