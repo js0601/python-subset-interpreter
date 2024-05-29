@@ -18,7 +18,7 @@ pub enum BiOp {
     DoubleEqual,
     NotEqual,
     Greater,
-    GreatEqual,
+    GreaterEqual,
     Less,
     LessEqual,
 }
@@ -68,7 +68,7 @@ impl fmt::Debug for BiOp {
             BiOp::DoubleEqual => write!(f, "=="),
             BiOp::NotEqual => write!(f, "!="),
             BiOp::Greater => write!(f, ">"),
-            BiOp::GreatEqual => write!(f, ">="),
+            BiOp::GreaterEqual => write!(f, ">="),
             BiOp::Less => write!(f, "<"),
             BiOp::LessEqual => write!(f, "<="),
         }

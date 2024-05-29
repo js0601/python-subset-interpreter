@@ -67,6 +67,44 @@ impl Parser {
 
     // comparison -> term ((">"|">="|"<"|">=") term)*
     fn comparison(&mut self) -> Expr {
+        let mut ex = self.term();
+        while self.check_advance(vec![
+            TokenType::Greater,
+            TokenType::GreaterEqual,
+            TokenType::Less,
+            TokenType::LessEqual,
+        ]) {
+            // turn the token into a BiOp
+            let op = match self.tokens[self.current_idx - 1].token_type {
+                TokenType::Greater => BiOp::Greater,
+                TokenType::GreaterEqual => BiOp::GreaterEqual,
+                TokenType::Less => BiOp::Less,
+                TokenType::LessEqual => BiOp::LessEqual,
+                _ => panic!("In comparison(): op token_type was not <,<=,> or >=, error probably in check_advance() or comparison()"),
+            };
+            let right = self.term();
+            ex = Expr::Binary(Box::new(ex), op, Box::new(right));
+        }
+        ex
+    }
+
+    // term -> factor (("+"|"-") factor)*
+    fn term(&mut self) -> Expr {
+        Expr::Literal(Lit::String("nothing".to_string()))
+    }
+
+    // factor -> unary (("*"|"/") unary)*
+    fn factor(&mut self) -> Expr {
+        Expr::Literal(Lit::String("nothing".to_string()))
+    }
+
+    // unary -> ("-"|"not") unary | primary
+    fn unary(&mut self) -> Expr {
+        Expr::Literal(Lit::String("nothing".to_string()))
+    }
+
+    // primary -> NUMBER | STRING | "True" | "False" | "None" | "(" expr ")"
+    fn primary(&mut self) -> Expr {
         Expr::Literal(Lit::String("nothing".to_string()))
     }
 }
