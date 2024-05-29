@@ -1,15 +1,26 @@
-// see grammar.txt for grammar
+use crate::common::{ast::*, token::*};
 
-use crate::common::{ast::*, py_error::*, token::*};
+// TODO: only returns one expression for now
+pub fn parse(tokens: Vec<Token>) -> Expr {
+    let mut p = Parser {
+        tokens,
+        current_idx: 0,
+    };
 
-#[derive(Default)]
+    p.expression()
+}
+
 struct Parser {
     tokens: Vec<Token>,
     current_idx: usize,
 }
 
 impl Parser {
-    // check if current token has one of the types
+    //////////////////////
+    // helper functions //
+    //////////////////////
+
+    // checks if current token has one of the types
     fn check_type(&self, types: Vec<TokenType>) -> bool {
         for t in types {
             if self.tokens[self.current_idx].token_type == t {
@@ -27,40 +38,35 @@ impl Parser {
         }
         false
     }
-}
 
-// TODO: only returns one expression for now
-pub fn parse(tokens: Vec<Token>) -> Expr {
-    let mut p = Parser {
-        tokens,
-        ..Default::default()
-    };
+    /////////////
+    // grammar //
+    /////////////
+    // see grammar.txt
 
-    expression(&mut p)
-}
-
-// expr -> equality
-fn expression(p: &mut Parser) -> Expr {
-    equality(p)
-}
-
-// equality -> comparison (("=="|"!=") comparison)*
-fn equality(p: &mut Parser) -> Expr {
-    let mut ex = comparison(p);
-    while p.check_advance(vec![TokenType::DoubleEqual, TokenType::NotEqual]) {
-        // turn the token into a BiOp
-        let op = match p.tokens[p.current_idx - 1].token_type {
-            TokenType::DoubleEqual => BiOp::DoubleEqual,
-            TokenType::NotEqual => BiOp::NotEqual,
-            _ => panic!("In equality(): op token_type was not == or !="), // TODO: better error handling
-        };
-        let right = comparison(p);
-        ex = Expr::Binary(Box::new(ex), op, Box::new(right));
+    // expr -> equality
+    fn expression(&mut self) -> Expr {
+        self.equality()
     }
-    ex
-}
 
-// comparison -> term ((">"|">="|"<"|">=") term)*
-fn comparison(p: &mut Parser) -> Expr {
-    Expr::Literal(Lit::String("nothing".to_string()))
+    // equality -> comparison (("=="|"!=") comparison)*
+    fn equality(&mut self) -> Expr {
+        let mut ex = self.comparison();
+        while self.check_advance(vec![TokenType::DoubleEqual, TokenType::NotEqual]) {
+            // turn the token into a BiOp
+            let op = match self.tokens[self.current_idx - 1].token_type {
+                TokenType::DoubleEqual => BiOp::DoubleEqual,
+                TokenType::NotEqual => BiOp::NotEqual,
+                _ => panic!("In equality(): op token_type was not == or !=, error probably in check_advance() or equality()"),
+            };
+            let right = self.comparison();
+            ex = Expr::Binary(Box::new(ex), op, Box::new(right));
+        }
+        ex
+    }
+
+    // comparison -> term ((">"|">="|"<"|">=") term)*
+    fn comparison(&mut self) -> Expr {
+        Expr::Literal(Lit::String("nothing".to_string()))
+    }
 }
