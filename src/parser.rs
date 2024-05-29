@@ -90,12 +90,34 @@ impl Parser {
 
     // term -> factor (("+"|"-") factor)*
     fn term(&mut self) -> Expr {
-        Expr::Literal(Lit::String("nothing".to_string()))
+        let mut ex = self.factor();
+        while self.check_advance(vec![TokenType::Plus, TokenType::Minus]) {
+            // turn the token into a BiOp
+            let op = match self.tokens[self.current_idx - 1].token_type {
+                TokenType::Plus => BiOp::Plus,
+                TokenType::Minus => BiOp::Minus,
+                _ => panic!("In term(): op token_type was not + or -, error probably in check_advance() or term()"),
+            };
+            let right = self.factor();
+            ex = Expr::Binary(Box::new(ex), op, Box::new(right));
+        }
+        ex
     }
 
     // factor -> unary (("*"|"/") unary)*
     fn factor(&mut self) -> Expr {
-        Expr::Literal(Lit::String("nothing".to_string()))
+        let mut ex = self.unary();
+        while self.check_advance(vec![TokenType::Asterisk, TokenType::Slash]) {
+            // turn the token into a BiOp
+            let op = match self.tokens[self.current_idx - 1].token_type {
+                TokenType::Asterisk => BiOp::Times,
+                TokenType::Slash => BiOp::Divided,
+                _ => panic!("In factor(): op token_type was not * or /, error probably in check_advance() or factor()"),
+            };
+            let right = self.unary();
+            ex = Expr::Binary(Box::new(ex), op, Box::new(right));
+        }
+        ex
     }
 
     // unary -> ("-"|"not") unary | primary
