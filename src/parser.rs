@@ -1,13 +1,19 @@
-use crate::common::{ast::*, token::*};
+use crate::common::{ast::*, py_error::PyError, token::*};
 
 // TODO: only returns one expression for now
-pub fn parse(tokens: Vec<Token>) -> Expr {
+pub fn parse(tokens: Vec<Token>) -> Option<Expr> {
     let mut p = Parser {
         tokens,
         current_idx: 0,
     };
 
-    p.expression()
+    match p.expression() {
+        Ok(ex) => Some(ex),
+        Err(err) => {
+            println!("{err}");
+            None
+        }
+    }
 }
 
 struct Parser {
@@ -47,13 +53,13 @@ impl Parser {
     // see grammar.txt
 
     // expr -> equality
-    fn expression(&mut self) -> Expr {
+    fn expression(&mut self) -> Result<Expr, PyError> {
         self.equality()
     }
 
     // equality -> comparison (("=="|"!=") comparison)*
-    fn equality(&mut self) -> Expr {
-        let mut ex = self.comparison();
+    fn equality(&mut self) -> Result<Expr, PyError> {
+        let mut ex = self.comparison()?;
         while self.check_advance(vec![TokenType::DoubleEqual, TokenType::NotEqual]) {
             // turn the token into a BiOp
             let op = match self.tokens[self.current_idx - 1].token_type {
@@ -61,15 +67,15 @@ impl Parser {
                 TokenType::NotEqual => BiOp::NotEqual,
                 _ => panic!("In equality(): op token_type was not == or !=, error probably in check_advance() or equality()"),
             };
-            let right = self.comparison();
+            let right = self.comparison()?;
             ex = Expr::Binary(Box::new(ex), op, Box::new(right));
         }
-        ex
+        Ok(ex)
     }
 
     // comparison -> term ((">"|">="|"<"|">=") term)*
-    fn comparison(&mut self) -> Expr {
-        let mut ex = self.term();
+    fn comparison(&mut self) -> Result<Expr, PyError> {
+        let mut ex = self.term()?;
         while self.check_advance(vec![
             TokenType::Greater,
             TokenType::GreaterEqual,
@@ -84,15 +90,15 @@ impl Parser {
                 TokenType::LessEqual => BiOp::LessEqual,
                 _ => panic!("In comparison(): op token_type was not <,<=,> or >=, error probably in check_advance() or comparison()"),
             };
-            let right = self.term();
+            let right = self.term()?;
             ex = Expr::Binary(Box::new(ex), op, Box::new(right));
         }
-        ex
+        Ok(ex)
     }
 
     // term -> factor (("+"|"-") factor)*
-    fn term(&mut self) -> Expr {
-        let mut ex = self.factor();
+    fn term(&mut self) -> Result<Expr, PyError> {
+        let mut ex = self.factor()?;
         while self.check_advance(vec![TokenType::Plus, TokenType::Minus]) {
             // turn the token into a BiOp
             let op = match self.tokens[self.current_idx - 1].token_type {
@@ -100,15 +106,15 @@ impl Parser {
                 TokenType::Minus => BiOp::Minus,
                 _ => panic!("In term(): op token_type was not + or -, error probably in check_advance() or term()"),
             };
-            let right = self.factor();
+            let right = self.factor()?;
             ex = Expr::Binary(Box::new(ex), op, Box::new(right));
         }
-        ex
+        Ok(ex)
     }
 
     // factor -> unary (("*"|"/") unary)*
-    fn factor(&mut self) -> Expr {
-        let mut ex = self.unary();
+    fn factor(&mut self) -> Result<Expr, PyError> {
+        let mut ex = self.unary()?;
         while self.check_advance(vec![TokenType::Asterisk, TokenType::Slash]) {
             // turn the token into a BiOp
             let op = match self.tokens[self.current_idx - 1].token_type {
@@ -116,14 +122,14 @@ impl Parser {
                 TokenType::Slash => BiOp::Divided,
                 _ => panic!("In factor(): op token_type was not * or /, error probably in check_advance() or factor()"),
             };
-            let right = self.unary();
+            let right = self.unary()?;
             ex = Expr::Binary(Box::new(ex), op, Box::new(right));
         }
-        ex
+        Ok(ex)
     }
 
     // unary -> ("-"|"not") unary | primary
-    fn unary(&mut self) -> Expr {
+    fn unary(&mut self) -> Result<Expr, PyError> {
         if self.check_advance(vec![TokenType::Minus, TokenType::Not]) {
             // turn the token into a UnOp
             let op = match self.tokens[self.current_idx - 1].token_type {
@@ -131,38 +137,42 @@ impl Parser {
                 TokenType::Not => UnOp::Not,
                 _ => panic!("In unary(): op token_type was not - or not, error probably in check_advance() or unary()"),
             };
-            let right = self.unary();
-            return Expr::Unary(op, Box::new(right));
+            let right = self.unary()?;
+            return Ok(Expr::Unary(op, Box::new(right)));
         }
         self.primary()
     }
 
     // primary -> NUMBER | STRING | "True" | "False" | "None" | "(" expr ")"
-    fn primary(&mut self) -> Expr {
+    fn primary(&mut self) -> Result<Expr, PyError> {
         if self.check_advance(vec![
             TokenType::String("".to_string()),
             TokenType::Int(0),
             TokenType::Float(0.0),
         ]) {
             match &self.tokens[self.current_idx - 1].token_type {
-                TokenType::String(s) => return Expr::Literal(Lit::String(s.to_string())),
-                TokenType::Int(n) => return Expr::Literal(Lit::Int(*n)),
-                TokenType::Float(n) => return Expr::Literal(Lit::Float(*n)),
-                _ => panic!("In primary(): op token_type was not String or Int or Float, error probably in check_literal_advance() or primary()"),
+                TokenType::String(s) => return Ok(Expr::Literal(Lit::String(s.to_string()))),
+                TokenType::Int(n) => return Ok(Expr::Literal(Lit::Int(*n))),
+                TokenType::Float(n) => return Ok(Expr::Literal(Lit::Float(*n))),
+                _ => panic!("In primary(): op token_type was not String or Int or Float, error probably in check_advance() or primary()"),
             }
         }
 
         if self.check_advance(vec![TokenType::True]) {
-            return Expr::Literal(Lit::True);
+            return Ok(Expr::Literal(Lit::True));
         }
         if self.check_advance(vec![TokenType::False]) {
-            return Expr::Literal(Lit::False);
+            return Ok(Expr::Literal(Lit::False));
         }
         if self.check_advance(vec![TokenType::None]) {
-            return Expr::Literal(Lit::None);
+            return Ok(Expr::Literal(Lit::None));
         }
 
-        // TODO: add grouping and error if no matching token was found
-        Expr::Literal(Lit::String("hehe".to_string()))
+        // TODO: add grouping
+        Err(PyError {
+            msg: "SyntaxError: Unexpected or missing token".to_owned(),
+            line: self.tokens[self.current_idx].line,
+            column: self.tokens[self.current_idx].column, // TODO: sometimes points at wrong column
+        })
     }
 }
