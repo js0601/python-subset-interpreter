@@ -168,7 +168,19 @@ impl Parser {
             return Ok(Expr::Literal(Lit::None));
         }
 
-        // TODO: add grouping
+        if self.check_advance(vec![TokenType::LeftParen]) {
+            let ex = self.expression()?;
+            if !self.check_advance(vec![TokenType::RightParen]) {
+                return Err(PyError {
+                    msg: "SyntaxError: Missing closing parentheses".to_owned(),
+                    line: self.tokens[self.current_idx].line,
+                    column: self.tokens[self.current_idx].column,
+                });
+            } else {
+                return Ok(Expr::Grouping(Box::new(ex)));
+            }
+        }
+
         Err(PyError {
             msg: "SyntaxError: Unexpected or missing token".to_owned(),
             line: self.tokens[self.current_idx].line,
