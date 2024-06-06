@@ -66,5 +66,14 @@ fn run(code: String) {
     } else {
         return;
     }
-    println!("{expr:?}");
+    println!("\n{expr:?}");
+
+    let val = match interpreter::interpret(expr) {
+        Ok(v) => v,
+        Err(e) => {
+            println!("{e}");
+            return;
+        }
+    };
+    println!("\n{val:?}");
 }

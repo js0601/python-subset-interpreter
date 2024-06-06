@@ -80,7 +80,7 @@ impl fmt::Debug for Lit {
         match self {
             Lit::Int(x) => write!(f, "{x}"),
             Lit::Float(x) => write!(f, "{x}"),
-            Lit::String(s) => write!(f, "{s}"),
+            Lit::String(s) => write!(f, "\"{s}\""),
             Lit::True => write!(f, "True"),
             Lit::False => write!(f, "False"),
             Lit::None => write!(f, "None"),

@@ -338,7 +338,7 @@ fn build_number(
             TokenType::Int(
                 number
                     .parse::<u64>()
-                    .expect("This should never fail, because number should only contain numbers"),
+                    .expect("This should never fail, because number should only contain numbers"), // TODO: what if number big
             ),
             line,
             *column,
