@@ -97,10 +97,13 @@ fn scan_indent(
     let mut line_indent = 0;
     for c in code.chars().skip(*current_idx) {
         match c {
-            /* TODO: currently counts tab as one indent but this isn't how it should be (I think)
-            rn "[tab]abc" and " abc" have the same indentation, but don't look the part in the source file
-            */
-            ' ' | '\t' => {
+            '\t' => {
+                let next_8 = 8 - (line_indent % 8);
+                line_indent += next_8;
+                *current_idx += 1;
+                *column += next_8;
+            }
+            ' ' => {
                 line_indent += 1;
                 *current_idx += 1;
                 *column += 1;

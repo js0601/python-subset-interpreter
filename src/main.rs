@@ -54,8 +54,6 @@ fn run(code: String) {
     } else {
         return;
     }
-
-    // print tokens
     for t in &tokens {
         println!("{:?}, {}, {}", t.token_type, t.line, t.column);
     }
