@@ -16,7 +16,13 @@ pub enum UnOpType {
     Not,
 }
 
-pub enum BiOp {
+pub struct BiOp {
+    pub ty: BiOpType,
+    pub line: u64,
+    pub column: u64,
+}
+
+pub enum BiOpType {
     Plus,
     Minus,
     Times,
@@ -66,17 +72,17 @@ impl fmt::Debug for UnOp {
 
 impl fmt::Debug for BiOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            BiOp::Plus => write!(f, "+"),
-            BiOp::Minus => write!(f, "-"),
-            BiOp::Times => write!(f, "*"),
-            BiOp::Divided => write!(f, "/"),
-            BiOp::DoubleEqual => write!(f, "=="),
-            BiOp::NotEqual => write!(f, "!="),
-            BiOp::Greater => write!(f, ">"),
-            BiOp::GreaterEqual => write!(f, ">="),
-            BiOp::Less => write!(f, "<"),
-            BiOp::LessEqual => write!(f, "<="),
+        match self.ty {
+            BiOpType::Plus => write!(f, "+"),
+            BiOpType::Minus => write!(f, "-"),
+            BiOpType::Times => write!(f, "*"),
+            BiOpType::Divided => write!(f, "/"),
+            BiOpType::DoubleEqual => write!(f, "=="),
+            BiOpType::NotEqual => write!(f, "!="),
+            BiOpType::Greater => write!(f, ">"),
+            BiOpType::GreaterEqual => write!(f, ">="),
+            BiOpType::Less => write!(f, "<"),
+            BiOpType::LessEqual => write!(f, "<="),
         }
     }
 }

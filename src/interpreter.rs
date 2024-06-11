@@ -27,21 +27,21 @@ fn eval_unary(op: UnOp, expr: Expr) -> Result<Value, PyError> {
         // TODO: python doesn't throw an error for this, maybe change it
         (UnOpType::Minus, Value::Bool(_)) => Err(PyError {
             msg: "TypeError: Can't apply unary operator - to Boolean".to_owned(),
-            line: 1, // TODO: need to carry line/column through somehow, lost it inside parser
-            column: 1,
+            line: op.line,
+            column: op.column,
         }),
         (UnOpType::Not, Value::Int(n)) => Ok(Value::Bool(n == 0)),
         (UnOpType::Not, Value::Float(n)) => Ok(Value::Bool(n == 0.0)),
         (UnOpType::Not, Value::Bool(b)) => Ok(Value::Bool(!b)),
         (_, Value::String(_)) => Err(PyError {
             msg: "TypeError: Can't apply unary operator to String".to_owned(),
-            line: 1, // TODO: fix
-            column: 1,
+            line: op.line,
+            column: op.column,
         }),
         (_, Value::None) => Err(PyError {
             msg: "TypeError: Can't apply unary operator to None".to_owned(),
-            line: 1, // TODO: fix
-            column: 1,
+            line: op.line,
+            column: op.column,
         }),
     }
 }
@@ -52,8 +52,8 @@ fn eval_binary(ex1: Expr, op: BiOp, ex2: Expr) -> Result<Value, PyError> {
 
     // TODO: needs to handle e.g. 3 / 2 and 3 / 0
     // TODO: maybe add arithmetic for Booleans (true=1, false=0)
-    match op {
-        BiOp::Plus => match (left, right) {
+    match op.ty {
+        BiOpType::Plus => match (left, right) {
             (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a + b)),
             (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 + b)), // TODO: might fail?
             (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a + b as f64)), // TODO: might fail?
@@ -61,44 +61,44 @@ fn eval_binary(ex1: Expr, op: BiOp, ex2: Expr) -> Result<Value, PyError> {
             (Value::String(a), Value::String(b)) => Ok(Value::String(format!("{a}{b}"))),
             _ => Err(PyError {
                 msg: "TypeError: Can't apply binary operator + here".to_owned(),
-                line: 1, // TODO: fix
-                column: 1,
+                line: op.line,
+                column: op.column,
             }),
         },
-        BiOp::Minus => match (left, right) {
+        BiOpType::Minus => match (left, right) {
             (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a - b)),
             (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 - b)), // TODO: might fail?
             (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a - b as f64)), // TODO: might fail?
             (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a - b)),
             _ => Err(PyError {
                 msg: "TypeError: Can't apply binary operator - here".to_owned(),
-                line: 1, // TODO: fix
-                column: 1,
+                line: op.line,
+                column: op.column,
             }),
         },
-        BiOp::Times => match (left, right) {
+        BiOpType::Times => match (left, right) {
             (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a * b)),
             (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 * b)), // TODO: might fail?
             (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a * b as f64)), // TODO: might fail?
             (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a * b)),
             _ => Err(PyError {
                 msg: "TypeError: Can't apply binary operator * here".to_owned(),
-                line: 1, // TODO: fix
-                column: 1,
+                line: op.line,
+                column: op.column,
             }),
         },
-        BiOp::Divided => match (left, right) {
+        BiOpType::Divided => match (left, right) {
             (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a / b)),
             (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 / b)), // TODO: might fail?
             (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a / b as f64)), // TODO: might fail?
             (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a / b)),
             _ => Err(PyError {
                 msg: "TypeError: Can't apply binary operator / here".to_owned(),
-                line: 1, // TODO: fix
-                column: 1,
+                line: op.line,
+                column: op.column,
             }),
         },
-        BiOp::DoubleEqual => match (left, right) {
+        BiOpType::DoubleEqual => match (left, right) {
             (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a == b)),
             (Value::Int(a), Value::Float(b)) => Ok(Value::Bool(a as f64 == b)), // TODO: might fail?
             (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a == b as f64)), // TODO: might fail?
@@ -110,11 +110,11 @@ fn eval_binary(ex1: Expr, op: BiOp, ex2: Expr) -> Result<Value, PyError> {
             (_, Value::None) => Ok(Value::Bool(false)),
             _ => Err(PyError {
                 msg: "TypeError: Can't apply binary operator == here".to_owned(),
-                line: 1, // TODO: fix
-                column: 1,
+                line: op.line,
+                column: op.column,
             }),
         },
-        BiOp::NotEqual => match (left, right) {
+        BiOpType::NotEqual => match (left, right) {
             (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a != b)),
             (Value::Int(a), Value::Float(b)) => Ok(Value::Bool(a as f64 != b)), // TODO: might fail?
             (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a != b as f64)), // TODO: might fail?
@@ -126,52 +126,52 @@ fn eval_binary(ex1: Expr, op: BiOp, ex2: Expr) -> Result<Value, PyError> {
             (_, Value::None) => Ok(Value::Bool(true)),
             _ => Err(PyError {
                 msg: "TypeError: Can't apply binary operator != here".to_owned(),
-                line: 1, // TODO: fix
-                column: 1,
+                line: op.line,
+                column: op.column,
             }),
         },
-        BiOp::Greater => match (left, right) {
+        BiOpType::Greater => match (left, right) {
             (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a > b)),
             (Value::Int(a), Value::Float(b)) => Ok(Value::Bool(a as f64 > b)), // TODO: might fail?
             (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a > b as f64)), // TODO: might fail?
             (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a > b)),
             _ => Err(PyError {
                 msg: "TypeError: Can't apply binary operator > here".to_owned(),
-                line: 1, // TODO: fix
-                column: 1,
+                line: op.line,
+                column: op.column,
             }),
         },
-        BiOp::GreaterEqual => match (left, right) {
+        BiOpType::GreaterEqual => match (left, right) {
             (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a >= b)),
             (Value::Int(a), Value::Float(b)) => Ok(Value::Bool(a as f64 >= b)), // TODO: might fail?
             (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a >= b as f64)), // TODO: might fail?
             (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a >= b)),
             _ => Err(PyError {
                 msg: "TypeError: Can't apply binary operator >= here".to_owned(),
-                line: 1, // TODO: fix
-                column: 1,
+                line: op.line,
+                column: op.column,
             }),
         },
-        BiOp::Less => match (left, right) {
+        BiOpType::Less => match (left, right) {
             (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a < b)),
             (Value::Int(a), Value::Float(b)) => Ok(Value::Bool((a as f64) < b)), // TODO: might fail?
             (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a < b as f64)), // TODO: might fail?
             (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a < b)),
             _ => Err(PyError {
                 msg: "TypeError: Can't apply binary operator < here".to_owned(),
-                line: 1, // TODO: fix
-                column: 1,
+                line: op.line,
+                column: op.column,
             }),
         },
-        BiOp::LessEqual => match (left, right) {
+        BiOpType::LessEqual => match (left, right) {
             (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a <= b)),
             (Value::Int(a), Value::Float(b)) => Ok(Value::Bool(a as f64 <= b)), // TODO: might fail?
             (Value::Float(a), Value::Int(b)) => Ok(Value::Bool(a <= b as f64)), // TODO: might fail?
             (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a <= b)),
             _ => Err(PyError {
                 msg: "TypeError: Can't apply binary operator <= here".to_owned(),
-                line: 1, // TODO: fix
-                column: 1,
+                line: op.line,
+                column: op.column,
             }),
         },
     }

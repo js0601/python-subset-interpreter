@@ -62,9 +62,18 @@ impl Parser {
         let mut ex = self.comparison()?;
         while self.check_advance(vec![TokenType::DoubleEqual, TokenType::NotEqual]) {
             // turn the token into a BiOp
-            let op = match self.tokens[self.current_idx - 1].token_type {
-                TokenType::DoubleEqual => BiOp::DoubleEqual,
-                TokenType::NotEqual => BiOp::NotEqual,
+            let tok = &self.tokens[self.current_idx - 1];
+            let op = match tok.token_type {
+                TokenType::DoubleEqual => BiOp {
+                    ty: BiOpType::DoubleEqual,
+                    line: tok.line,
+                    column: tok.column,
+                },
+                TokenType::NotEqual => BiOp {
+                    ty: BiOpType::NotEqual,
+                    line: tok.line,
+                    column: tok.column,
+                },
                 _ => panic!("In equality(): op token_type was not == or !=, error probably in check_advance() or equality()"),
             };
             let right = self.comparison()?;
@@ -83,11 +92,28 @@ impl Parser {
             TokenType::LessEqual,
         ]) {
             // turn the token into a BiOp
-            let op = match self.tokens[self.current_idx - 1].token_type {
-                TokenType::Greater => BiOp::Greater,
-                TokenType::GreaterEqual => BiOp::GreaterEqual,
-                TokenType::Less => BiOp::Less,
-                TokenType::LessEqual => BiOp::LessEqual,
+            let tok = &self.tokens[self.current_idx - 1];
+            let op = match tok.token_type {
+                TokenType::Greater => BiOp {
+                    ty: BiOpType::Greater,
+                    line: tok.line,
+                    column: tok.column,
+                },
+                TokenType::GreaterEqual => BiOp {
+                    ty: BiOpType::GreaterEqual,
+                    line: tok.line,
+                    column: tok.column,
+                },
+                TokenType::Less => BiOp {
+                    ty: BiOpType::Less,
+                    line: tok.line,
+                    column: tok.column,
+                },
+                TokenType::LessEqual => BiOp {
+                    ty: BiOpType::LessEqual,
+                    line: tok.line,
+                    column: tok.column,
+                },
                 _ => panic!("In comparison(): op token_type was not <,<=,> or >=, error probably in check_advance() or comparison()"),
             };
             let right = self.term()?;
@@ -101,9 +127,18 @@ impl Parser {
         let mut ex = self.factor()?;
         while self.check_advance(vec![TokenType::Plus, TokenType::Minus]) {
             // turn the token into a BiOp
-            let op = match self.tokens[self.current_idx - 1].token_type {
-                TokenType::Plus => BiOp::Plus,
-                TokenType::Minus => BiOp::Minus,
+            let tok = &self.tokens[self.current_idx - 1];
+            let op = match tok.token_type {
+                TokenType::Plus => BiOp {
+                    ty: BiOpType::Plus,
+                    line: tok.line,
+                    column: tok.column,
+                },
+                TokenType::Minus => BiOp {
+                    ty: BiOpType::Minus,
+                    line: tok.line,
+                    column: tok.column,
+                },
                 _ => panic!("In term(): op token_type was not + or -, error probably in check_advance() or term()"),
             };
             let right = self.factor()?;
@@ -117,9 +152,18 @@ impl Parser {
         let mut ex = self.unary()?;
         while self.check_advance(vec![TokenType::Asterisk, TokenType::Slash]) {
             // turn the token into a BiOp
-            let op = match self.tokens[self.current_idx - 1].token_type {
-                TokenType::Asterisk => BiOp::Times,
-                TokenType::Slash => BiOp::Divided,
+            let tok = &self.tokens[self.current_idx - 1];
+            let op = match tok.token_type {
+                TokenType::Asterisk => BiOp {
+                    ty: BiOpType::Times,
+                    line: tok.line,
+                    column: tok.column,
+                },
+                TokenType::Slash => BiOp {
+                    ty: BiOpType::Divided,
+                    line: tok.line,
+                    column: tok.column,
+                },
                 _ => panic!("In factor(): op token_type was not * or /, error probably in check_advance() or factor()"),
             };
             let right = self.unary()?;
