@@ -21,18 +21,18 @@ pub fn interpret(expr: Expr) -> Result<Value, PyError> {
 fn eval_unary(op: UnOp, expr: Expr) -> Result<Value, PyError> {
     let right = interpret(expr)?;
 
-    match (op, right) {
-        (UnOp::Minus, Value::Int(n)) => Ok(Value::Int(-n)),
-        (UnOp::Minus, Value::Float(n)) => Ok(Value::Float(-n)),
+    match (op.ty, right) {
+        (UnOpType::Minus, Value::Int(n)) => Ok(Value::Int(-n)),
+        (UnOpType::Minus, Value::Float(n)) => Ok(Value::Float(-n)),
         // TODO: python doesn't throw an error for this, maybe change it
-        (UnOp::Minus, Value::Bool(_)) => Err(PyError {
+        (UnOpType::Minus, Value::Bool(_)) => Err(PyError {
             msg: "TypeError: Can't apply unary operator - to Boolean".to_owned(),
             line: 1, // TODO: need to carry line/column through somehow, lost it inside parser
             column: 1,
         }),
-        (UnOp::Not, Value::Int(n)) => Ok(Value::Bool(n == 0)),
-        (UnOp::Not, Value::Float(n)) => Ok(Value::Bool(n == 0.0)),
-        (UnOp::Not, Value::Bool(b)) => Ok(Value::Bool(!b)),
+        (UnOpType::Not, Value::Int(n)) => Ok(Value::Bool(n == 0)),
+        (UnOpType::Not, Value::Float(n)) => Ok(Value::Bool(n == 0.0)),
+        (UnOpType::Not, Value::Bool(b)) => Ok(Value::Bool(!b)),
         (_, Value::String(_)) => Err(PyError {
             msg: "TypeError: Can't apply unary operator to String".to_owned(),
             line: 1, // TODO: fix

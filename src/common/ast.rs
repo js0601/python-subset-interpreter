@@ -5,7 +5,13 @@ pub enum Expr {
     Literal(Lit),
 }
 
-pub enum UnOp {
+pub struct UnOp {
+    pub ty: UnOpType,
+    pub line: u64,
+    pub column: u64,
+}
+
+pub enum UnOpType {
     Minus,
     Not,
 }
@@ -51,9 +57,9 @@ impl fmt::Debug for Expr {
 
 impl fmt::Debug for UnOp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            UnOp::Minus => write!(f, "-"),
-            UnOp::Not => write!(f, "not"),
+        match self.ty {
+            UnOpType::Minus => write!(f, "-"),
+            UnOpType::Not => write!(f, "not"),
         }
     }
 }

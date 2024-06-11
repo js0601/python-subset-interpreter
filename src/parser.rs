@@ -132,9 +132,18 @@ impl Parser {
     fn unary(&mut self) -> Result<Expr, PyError> {
         if self.check_advance(vec![TokenType::Minus, TokenType::Not]) {
             // turn the token into a UnOp
-            let op = match self.tokens[self.current_idx - 1].token_type {
-                TokenType::Minus => UnOp::Minus,
-                TokenType::Not => UnOp::Not,
+            let tok = &self.tokens[self.current_idx - 1];
+            let op = match tok.token_type {
+                TokenType::Minus => UnOp { 
+                    ty: UnOpType::Minus,
+                    line: tok.line,
+                    column: tok.column,
+                },
+                TokenType::Not => UnOp {
+                    ty: UnOpType::Not,
+                    line: tok.line,
+                    column: tok.column,
+                },
                 _ => panic!("In unary(): op token_type was not - or not, error probably in check_advance() or unary()"),
             };
             let right = self.unary()?;
