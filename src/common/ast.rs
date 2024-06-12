@@ -1,3 +1,9 @@
+#[derive(Debug)]
+pub enum Stmt {
+    Expr(Expr),
+    Print(Expr),
+}
+
 pub enum Expr {
     Unary(UnOp, Box<Expr>),
     Binary(Box<Expr>, BiOp, Box<Expr>),

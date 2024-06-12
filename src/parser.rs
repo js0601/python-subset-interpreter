@@ -1,18 +1,31 @@
 use crate::common::{ast::*, py_error::PyError, token::*};
 
 // TODO: only returns one expression for now
-pub fn parse(tokens: Vec<Token>) -> Option<Expr> {
+pub fn parse(tokens: Vec<Token>) -> Option<Vec<Stmt>> {
     let mut p = Parser {
         tokens,
         current_idx: 0,
     };
+    let mut statements = Vec::new();
+    let mut error = false;
 
-    match p.expression() {
-        Ok(ex) => Some(ex),
-        Err(err) => {
-            println!("{err}");
-            None
+    // TODO: error at end infinitely loops here for e.g. print 1)
+    while !p.check_type(vec![TokenType::EndOfFile]) {
+        match p.statement() {
+            Ok(s) => statements.push(s),
+            Err(e) => {
+                // TODO: here probably needs to advance to next line or smth, else I think EoL gets parsed on repeat
+                p.current_idx += 1; // stops loop eventually
+                error = true;
+                println!("{e}");
+            },
         }
+    }
+
+    if error {
+        None
+    } else {
+        Some(statements)
     }
 }
 
@@ -47,10 +60,48 @@ impl Parser {
         false
     }
 
+    // check_advance but outputs error on False
+    fn check_or_error(&mut self, types: Vec<TokenType>, msg: String) -> Result<(), PyError> {
+        if !self.check_advance(types) {
+            return Err(PyError {
+                msg,
+                line: self.tokens[self.current_idx].line,
+                column: self.tokens[self.current_idx].column,
+            })
+        }
+        Ok(())
+    }
+
     /////////////
     // grammar //
     /////////////
     // see grammar.txt
+
+    // stmt -> exprStmt | printStmt
+    fn statement(&mut self) -> Result<Stmt, PyError> {
+        if self.check_advance(vec![TokenType::Print]) {
+            return self.print_statement();
+        }
+
+        self.expression_statement()
+    }
+
+    // exprStmt -> expr "\n"
+    fn expression_statement(&mut self) -> Result<Stmt, PyError> {
+        let ex = self.expression()?;
+        self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: no newline after statement found".to_owned())?;
+        Ok(Stmt::Expr(ex))
+    }
+
+    // printStmt -> "print" "(" expr ")" "\n"
+    fn print_statement(&mut self) -> Result<Stmt, PyError> {
+        // print already consumed in statement
+        self.check_or_error(vec![TokenType::LeftParen], "SyntaxError: missing ( in call to print".to_owned())?;
+        let ex = self.expression()?;
+        self.check_or_error(vec![TokenType::RightParen], "SyntaxError: missing ) in call to print".to_owned())?;
+        self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: no newline after statement found".to_owned())?;
+        Ok(Stmt::Print(ex))
+    }
 
     // expr -> equality
     fn expression(&mut self) -> Result<Expr, PyError> {
@@ -223,15 +274,8 @@ impl Parser {
 
         if self.check_advance(vec![TokenType::LeftParen]) {
             let ex = self.expression()?;
-            if !self.check_advance(vec![TokenType::RightParen]) {
-                return Err(PyError {
-                    msg: "SyntaxError: Missing closing parentheses".to_owned(),
-                    line: self.tokens[self.current_idx].line,
-                    column: self.tokens[self.current_idx].column,
-                });
-            } else {
-                return Ok(Expr::Grouping(Box::new(ex)));
-            }
+            self.check_or_error(vec![TokenType::RightParen], "SyntaxError: Missing closing parentheses".to_owned())?;
+            return Ok(Expr::Grouping(Box::new(ex)));
         }
 
         Err(PyError {

@@ -45,7 +45,6 @@ fn repl() -> Result<(), io::Error> {
     Ok(())
 }
 
-// TODO: scan, parse and run the code
 fn run(code: String) {
     // stop running if there was an error
     let tokens;
@@ -58,20 +57,20 @@ fn run(code: String) {
         println!("{:?}, {}, {}", t.token_type, t.line, t.column);
     }
 
-    let expr;
-    if let Some(e) = parser::parse(tokens) {
-        expr = e;
+    let stmts;
+    if let Some(s) = parser::parse(tokens) {
+        stmts = s;
     } else {
         return;
     }
-    println!("\n{expr:?}");
+    println!("\n{stmts:?}");
 
-    let val = match interpreter::interpret(expr) {
-        Ok(v) => v,
-        Err(e) => {
-            println!("{e}");
-            return;
-        }
-    };
-    println!("\n{val:?}");
+    // let val = match interpreter::interpret(expr) {
+    //     Ok(v) => v,
+    //     Err(e) => {
+    //         println!("{e}");
+    //         return;
+    //     }
+    // };
+    // println!("\n{val:?}");
 }
