@@ -1,4 +1,10 @@
-// in order of precedence from lowest to highest
+file          -> stmt* EOF
+
+stmt          -> exprStmt
+               | printStmt
+
+exprStmt      -> expr "\n"
+printStmt     -> "print" "(" expr ")" "\n"
 
 expr          -> equality
 equality      -> comparison (("==" | "!=") comparison)*
@@ -6,7 +12,7 @@ comparison    -> term ((">" | ">=" | "<" | "<=") term)*
 term          -> factor (("+" | "-") factor)*
 factor        -> unary (("*" | "/") unary)*
 unary         -> ("-" | "not") unary
-              | primary
+               | primary
 primary       -> NUMBER | STRING
-              | "True" | "False" | "None"
-              | "(" expr ")"
+               | "True" | "False" | "None"
+               | "(" expr ")"
