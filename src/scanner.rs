@@ -380,6 +380,7 @@ fn check_keywords(text: &str) -> Option<TokenType> {
         "while" => Some(TokenType::While),
         "def" => Some(TokenType::Def),
         "return" => Some(TokenType::Return),
+        "print" => Some(TokenType::Print),
         "None" => Some(TokenType::None),
         _ => None,
     }
