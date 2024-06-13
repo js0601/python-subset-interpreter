@@ -1,6 +1,5 @@
 use crate::common::{ast::*, py_error::PyError, token::*};
 
-// TODO: only returns one expression for now
 pub fn parse(tokens: Vec<Token>) -> Option<Vec<Stmt>> {
     let mut p = Parser {
         tokens,
@@ -9,13 +8,18 @@ pub fn parse(tokens: Vec<Token>) -> Option<Vec<Stmt>> {
     let mut statements = Vec::new();
     let mut error = false;
 
-    // TODO: error at end infinitely loops here for e.g. print 1)
     while !p.check_type(vec![TokenType::EndOfFile]) {
+        // ignore end of lines that haven't been parsed in a rule in order to ignore blank lines
+        if p.check_advance(vec![TokenType::EndOfLine]) {
+            continue;
+        }
         match p.statement() {
             Ok(s) => statements.push(s),
             Err(e) => {
-                // TODO: here probably needs to advance to next line or smth, else I think EoL gets parsed on repeat
-                p.current_idx += 1; // stops loop eventually
+                // advance to next line on error
+                while !p.check_type(vec![TokenType::EndOfLine, TokenType::EndOfFile]) {
+                    p.current_idx += 1;
+                }
                 error = true;
                 println!("{e}");
             },
