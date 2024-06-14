@@ -53,9 +53,9 @@ fn run(code: String) {
     } else {
         return;
     }
-    for t in &tokens {
-        println!("{:?}, {}, {}", t.token_type, t.line, t.column);
-    }
+    // for t in &tokens {
+    //     println!("{:?}, {}, {}", t.token_type, t.line, t.column);
+    // }
 
     let stmts;
     if let Some(s) = parser::parse(tokens) {
@@ -65,12 +65,5 @@ fn run(code: String) {
     }
     println!("\n{stmts:?}");
 
-    // let val = match interpreter::interpret(expr) {
-    //     Ok(v) => v,
-    //     Err(e) => {
-    //         println!("{e}");
-    //         return;
-    //     }
-    // };
-    // println!("\n{val:?}");
+    interpreter::interpret(stmts);
 }

@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::common::{ast::*, py_error::*};
 
 #[derive(Debug)]
@@ -9,17 +11,56 @@ pub enum Value {
     None,
 }
 
-pub fn interpret(expr: Expr) -> Result<Value, PyError> {
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Value::Int(n) => write!(f, "{n}"),
+            Value::Float(n) => write!(f, "{n}"),
+            Value::String(s) => write!(f, "{s}"),
+            Value::Bool(b) => write!(f, "{b}"),
+            Value::None => write!(f, "None"),
+        }
+    }
+}
+
+// entry point, goes through all statements and prints errors
+pub fn interpret(stmts: Vec<Stmt>) {
+    for st in stmts {
+        match interpret_stmt(st) {
+            Ok(_) => continue,
+            Err(e) => {
+                println!("{e}");
+                continue;
+            }
+        }
+    }
+}
+
+fn interpret_stmt(stmt: Stmt) -> Result<(), PyError> {
+    match stmt {
+        Stmt::Expr(e) => {
+            eval_expr(e)?;
+            Ok(())
+        }
+        Stmt::Print(e) => {
+            let val = eval_expr(e)?;
+            println!("{val}");
+            Ok(())
+        }
+    }
+}
+
+fn eval_expr(expr: Expr) -> Result<Value, PyError> {
     match expr {
         Expr::Unary(op, e) => eval_unary(op, *e),
         Expr::Binary(e1, op, e2) => eval_binary(*e1, op, *e2),
-        Expr::Grouping(e) => interpret(*e),
+        Expr::Grouping(e) => eval_expr(*e),
         Expr::Literal(l) => Ok(eval_literal(l)),
     }
 }
 
 fn eval_unary(op: UnOp, expr: Expr) -> Result<Value, PyError> {
-    let right = interpret(expr)?;
+    let right = eval_expr(expr)?;
 
     match (op.ty, right) {
         (UnOpType::Minus, Value::Int(n)) => Ok(Value::Int(-n)),
@@ -47,8 +88,8 @@ fn eval_unary(op: UnOp, expr: Expr) -> Result<Value, PyError> {
 }
 
 fn eval_binary(ex1: Expr, op: BiOp, ex2: Expr) -> Result<Value, PyError> {
-    let left = interpret(ex1)?;
-    let right = interpret(ex2)?;
+    let left = eval_expr(ex1)?;
+    let right = eval_expr(ex2)?;
 
     // TODO: maybe add arithmetic for Booleans (true=1, false=0)
     match op.ty {
