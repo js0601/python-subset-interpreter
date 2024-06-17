@@ -6,7 +6,7 @@ stmt          -> exprStmt
 
 exprStmt      -> expr "\n"
 printStmt     -> "print" "(" expr ")" "\n"
-assignStmt       -> IDENTIFIER "=" expr "\n"
+assignStmt    -> IDENTIFIER "=" expr "\n"
 
 expr          -> equality
 equality      -> comparison (("==" | "!=") comparison)*

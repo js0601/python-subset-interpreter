@@ -47,7 +47,7 @@ fn interpret_stmt(stmt: Stmt) -> Result<(), PyError> {
             println!("{val}");
             Ok(())
         }
-        Stmt::Var(_, _) => todo!(),
+        Stmt::Assign(_, _) => todo!(),
     }
 }
 
