@@ -39,43 +39,6 @@ struct Parser {
 }
 
 impl Parser {
-    //////////////////////
-    // helper functions //
-    //////////////////////
-
-    // checks if current token has one of the types
-    fn check_type(&self, types: Vec<TokenType>) -> bool {
-        // not very pretty, but needed some way to eliminate value inside literal types
-        match &self.tokens[self.current_idx].token_type {
-            TokenType::Identifier(_) => types.iter().any(|t| matches!(t, TokenType::Identifier(_))),
-            TokenType::String(_) => types.iter().any(|t| matches!(t, TokenType::String(_))),
-            TokenType::Int(_) => types.iter().any(|t| matches!(t, TokenType::Int(_))),
-            TokenType::Float(_) => types.iter().any(|t| matches!(t, TokenType::Float(_))),
-            other => types.contains(other),
-        }
-    }
-
-    // check_type but it moves the idx
-    fn check_advance(&mut self, types: Vec<TokenType>) -> bool {
-        if self.check_type(types) {
-            self.current_idx += 1;
-            return true;
-        }
-        false
-    }
-
-    // check_advance but outputs error on False
-    fn check_or_error(&mut self, types: Vec<TokenType>, msg: String) -> Result<(), PyError> {
-        if !self.check_advance(types) {
-            return Err(PyError {
-                msg,
-                line: self.tokens[self.current_idx].line,
-                column: self.tokens[self.current_idx].column,
-            })
-        }
-        Ok(())
-    }
-
     /////////////
     // grammar //
     /////////////
@@ -251,15 +214,18 @@ impl Parser {
         self.primary()
     }
 
-    // primary -> NUMBER | STRING | "True" | "False" | "None" | "(" expr ")"
+    // primary -> NUMBER | STRING | "True" | "False" | "None" | "(" expr ")" | IDENTIFIER
     fn primary(&mut self) -> Result<Expr, PyError> {
         if self.check_advance(vec![
-            TokenType::String("".to_string()),
+            TokenType::Identifier("".to_owned()),
+            TokenType::String("".to_owned()),
             TokenType::Int(0),
             TokenType::Float(0.0),
         ]) {
-            match &self.tokens[self.current_idx - 1].token_type {
-                TokenType::String(s) => return Ok(Expr::Literal(Lit::String(s.to_string()))),
+            let previous_tok = &self.tokens[self.current_idx - 1];
+            match &previous_tok.token_type {
+                TokenType::Identifier(n) => return Ok(Expr::Variable(Name { name: n.to_owned(), line: previous_tok.line , column: previous_tok.column})),
+                TokenType::String(s) => return Ok(Expr::Literal(Lit::String(s.to_owned()))),
                 TokenType::Int(n) => return Ok(Expr::Literal(Lit::Int(*n))),
                 TokenType::Float(n) => return Ok(Expr::Literal(Lit::Float(*n))),
                 _ => panic!("In primary(): op token_type was not String or Int or Float, error probably in check_advance() or primary()"),
@@ -287,5 +253,42 @@ impl Parser {
             line: self.tokens[self.current_idx].line,
             column: self.tokens[self.current_idx].column, // TODO: sometimes points at wrong column
         })
+    }
+
+    //////////////////////
+    // helper functions //
+    //////////////////////
+
+    // checks if current token has one of the types
+    fn check_type(&self, types: Vec<TokenType>) -> bool {
+        // not very pretty, but needed some way to eliminate value inside literal types
+        match &self.tokens[self.current_idx].token_type {
+            TokenType::Identifier(_) => types.iter().any(|t| matches!(t, TokenType::Identifier(_))),
+            TokenType::String(_) => types.iter().any(|t| matches!(t, TokenType::String(_))),
+            TokenType::Int(_) => types.iter().any(|t| matches!(t, TokenType::Int(_))),
+            TokenType::Float(_) => types.iter().any(|t| matches!(t, TokenType::Float(_))),
+            other => types.contains(other),
+        }
+    }
+
+    // check_type but it moves the idx
+    fn check_advance(&mut self, types: Vec<TokenType>) -> bool {
+        if self.check_type(types) {
+            self.current_idx += 1;
+            return true;
+        }
+        false
+    }
+
+    // check_advance but outputs error on False
+    fn check_or_error(&mut self, types: Vec<TokenType>, msg: String) -> Result<(), PyError> {
+        if !self.check_advance(types) {
+            return Err(PyError {
+                msg,
+                line: self.tokens[self.current_idx].line,
+                column: self.tokens[self.current_idx].column,
+            })
+        }
+        Ok(())
     }
 }
