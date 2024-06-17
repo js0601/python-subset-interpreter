@@ -2,6 +2,7 @@
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
+    Var(Name, Expr),
 }
 
 pub enum Expr {
@@ -9,6 +10,13 @@ pub enum Expr {
     Binary(Box<Expr>, BiOp, Box<Expr>),
     Grouping(Box<Expr>),
     Literal(Lit),
+    Variable(Name),
+}
+
+pub struct Name {
+    pub name: String,
+    pub line: u64,
+    pub column: u64,
 }
 
 pub struct UnOp {
@@ -63,7 +71,14 @@ impl fmt::Debug for Expr {
             Expr::Binary(ex1, op, ex2) => write!(f, "({op:?} {ex1:?} {ex2:?})"),
             Expr::Grouping(ex) => write!(f, "(group {ex:?})"),
             Expr::Literal(l) => write!(f, "{l:?}"),
+            Expr::Variable(n) => write!(f, "{n:?}"),
         }
+    }
+}
+
+impl fmt::Debug for Name {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
     }
 }
 

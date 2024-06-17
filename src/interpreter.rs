@@ -47,6 +47,7 @@ fn interpret_stmt(stmt: Stmt) -> Result<(), PyError> {
             println!("{val}");
             Ok(())
         }
+        Stmt::Var(_, _) => todo!(),
     }
 }
 
@@ -56,6 +57,7 @@ fn eval_expr(expr: Expr) -> Result<Value, PyError> {
         Expr::Binary(e1, op, e2) => eval_binary(*e1, op, *e2),
         Expr::Grouping(e) => eval_expr(*e),
         Expr::Literal(l) => Ok(eval_literal(l)),
+        Expr::Variable(_) => todo!(),
     }
 }
 
