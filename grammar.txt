@@ -2,9 +2,11 @@ file          -> stmt* EOF
 
 stmt          -> exprStmt
                | printStmt
+               | varStmt
 
 exprStmt      -> expr "\n"
 printStmt     -> "print" "(" expr ")" "\n"
+varStmt       -> IDENTIFIER "=" expr "\n"
 
 expr          -> equality
 equality      -> comparison (("==" | "!=") comparison)*
@@ -16,3 +18,4 @@ unary         -> ("-" | "not") unary
 primary       -> NUMBER | STRING
                | "True" | "False" | "None"
                | "(" expr ")"
+               | IDENTIFIER
