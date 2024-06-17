@@ -2,7 +2,7 @@
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
-    Var(Name, Expr),
+    Assign(Name, Expr),
 }
 
 pub enum Expr {

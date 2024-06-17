@@ -2,11 +2,11 @@ file          -> stmt* EOF
 
 stmt          -> exprStmt
                | printStmt
-               | varStmt
+               | assignStmt
 
 exprStmt      -> expr "\n"
 printStmt     -> "print" "(" expr ")" "\n"
-varStmt       -> IDENTIFIER "=" expr "\n"
+assignStmt       -> IDENTIFIER "=" expr "\n"
 
 expr          -> equality
 equality      -> comparison (("==" | "!=") comparison)*
