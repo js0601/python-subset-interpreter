@@ -1,8 +1,8 @@
-use std::fmt;
+use std::{collections::HashMap, fmt};
 
 use crate::common::{ast::*, py_error::*};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Int(i128),
     Float(f64),
@@ -21,6 +21,24 @@ impl fmt::Display for Value {
             Value::None => write!(f, "None"),
         }
     }
+}
+
+struct Environment {
+    env: HashMap<String, Value>, // TODO: maybe Name instead of String
+}
+
+impl Environment {
+    // TODO: not tested
+    // if name not in map: insert name,val pair
+    // if name in map: update v with val
+    fn assign(&mut self, name: String, val: Value) {
+        self.env
+            .entry(name)
+            .and_modify(|v| *v = val.clone())
+            .or_insert(val);
+    }
+
+    fn get(&mut self) {}
 }
 
 // entry point, goes through all statements and prints errors
