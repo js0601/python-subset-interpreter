@@ -44,10 +44,20 @@ impl Parser {
     /////////////
     // see grammar.txt
 
-    // stmt -> exprStmt | printStmt
+    // stmt -> exprStmt | printStmt | assignStmt
     fn statement(&mut self) -> Result<Stmt, PyError> {
         if self.check_advance(vec![TokenType::Print]) {
             return self.print_statement();
+        }
+
+        // only go to assignStmt if there is an id followed by =, else go to exprStmt
+        if self.check_advance(vec![TokenType::Identifier("".to_owned())]) {
+            if self.check_advance(vec![TokenType::Equal]) {
+                return self.assign_statement();
+            } else {
+                // needed to idx points back at identifier and doesn't skip it
+                self.current_idx -= 1;
+            }
         }
 
         self.expression_statement()
@@ -57,6 +67,7 @@ impl Parser {
     fn expression_statement(&mut self) -> Result<Stmt, PyError> {
         let ex = self.expression()?;
         self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: no newline after statement found".to_owned())?;
+
         Ok(Stmt::Expr(ex))
     }
 
@@ -67,7 +78,20 @@ impl Parser {
         let ex = self.expression()?;
         self.check_or_error(vec![TokenType::RightParen], "SyntaxError: missing ) in call to print".to_owned())?;
         self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: no newline after statement found".to_owned())?;
+
         Ok(Stmt::Print(ex))
+    }
+
+    // assignStmt -> IDENTIFIER "=" expr "\n"
+    fn assign_statement(&mut self) -> Result<Stmt, PyError> {
+        // guaranteed to be identifier because of ifs in statement()
+        let id = &self.tokens[self.current_idx - 2];
+        let name = Name {name: id.value.to_owned(), line: id.line, column: id.column };
+
+        let ex = self.expression()?;
+        self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: no newline after statement found".to_owned())?;
+
+        Ok(Stmt::Assign(name, ex))
     }
 
     // expr -> equality
@@ -224,7 +248,7 @@ impl Parser {
         ]) {
             let previous_tok = &self.tokens[self.current_idx - 1];
             match &previous_tok.token_type {
-                TokenType::Identifier(n) => return Ok(Expr::Variable(Name { name: n.to_owned(), line: previous_tok.line , column: previous_tok.column})),
+                TokenType::Identifier(n) => return Ok(Expr::Variable(Name { name: n.to_owned(), line: previous_tok.line, column: previous_tok.column})),
                 TokenType::String(s) => return Ok(Expr::Literal(Lit::String(s.to_owned()))),
                 TokenType::Int(n) => return Ok(Expr::Literal(Lit::Int(*n))),
                 TokenType::Float(n) => return Ok(Expr::Literal(Lit::Float(*n))),
