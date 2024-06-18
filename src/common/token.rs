@@ -33,7 +33,6 @@ pub enum TokenType {
     And,
     Or,
     If,
-    Elif,
     Else,
     While,
     Def,
@@ -187,12 +186,6 @@ impl Token {
             TokenType::If => Self {
                 token_type,
                 value: "if".to_owned(),
-                line,
-                column,
-            },
-            TokenType::Elif => Self {
-                token_type,
-                value: "elif".to_owned(),
                 line,
                 column,
             },

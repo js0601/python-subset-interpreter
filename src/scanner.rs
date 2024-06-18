@@ -375,7 +375,6 @@ fn check_keywords(text: &str) -> Option<TokenType> {
         "and" => Some(TokenType::And),
         "or" => Some(TokenType::Or),
         "if" => Some(TokenType::If),
-        "elif" => Some(TokenType::Elif),
         "else" => Some(TokenType::Else),
         "while" => Some(TokenType::While),
         "def" => Some(TokenType::Def),
