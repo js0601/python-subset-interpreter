@@ -3,10 +3,14 @@ file          -> stmt* EOF
 stmt          -> exprStmt
                | printStmt
                | assignStmt
+               | ifStmt
 
 exprStmt      -> expr "\n"
 printStmt     -> "print" "(" expr ")" "\n"
 assignStmt    -> IDENTIFIER "=" expr "\n"
+ifStmt        -> "if" expr ":" block ("else" block)?
+
+block         -> "\n" INDENT stmt* DEDENT
 
 expr          -> equality
 equality      -> comparison (("==" | "!=") comparison)*
