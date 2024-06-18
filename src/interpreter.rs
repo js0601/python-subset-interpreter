@@ -24,6 +24,9 @@ impl fmt::Display for Value {
 }
 
 struct Environment {
+    // TODO: when I get to functions, this needs some way to scope variables
+    // maybe a Option<Box<Environment>> to point at Env that encloses this one
+    // would need to change get method to first search the env on which it is called, then recursively the one enclosing it, until None in which case it errors
     vars: HashMap<String, Value>,
 }
 
