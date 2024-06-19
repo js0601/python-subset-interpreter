@@ -13,4 +13,6 @@ b = a + " hehe"
 if b == "jetzt nicht mehr hehe":
     print(b)
 else:
+    if b == "was anderes hehe":
+        print("hoho " + b)
     print(a)
