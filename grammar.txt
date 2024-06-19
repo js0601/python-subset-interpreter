@@ -8,7 +8,7 @@ stmt          -> exprStmt
 exprStmt      -> expr "\n"
 printStmt     -> "print" "(" expr ")" "\n"
 assignStmt    -> IDENTIFIER "=" expr "\n"
-ifStmt        -> "if" expr ":" block ("else" block)?
+ifStmt        -> "if" expr ":" block ("else" ":" block)?
 
 block         -> "\n" INDENT stmt* DEDENT
 

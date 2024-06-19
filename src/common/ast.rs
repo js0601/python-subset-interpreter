@@ -3,6 +3,7 @@ pub enum Stmt {
     Expr(Expr),
     Print(Expr),
     Assign(Name, Expr),
+    If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
 }
 
 pub enum Expr {

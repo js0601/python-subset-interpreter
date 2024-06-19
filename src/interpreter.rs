@@ -86,6 +86,7 @@ impl Interpreter {
                 self.env.assign(n.name, val);
                 Ok(())
             }
+            Stmt::If(_, _, _) => todo!(),
         }
     }
 
