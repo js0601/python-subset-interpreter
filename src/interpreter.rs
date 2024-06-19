@@ -86,7 +86,20 @@ impl Interpreter {
                 self.env.assign(n.name, val);
                 Ok(())
             }
-            Stmt::If(_, _, _) => todo!(),
+            Stmt::If(c, t, e) => {
+                if let Value::Bool(cond) = self.eval_expr(c)? {
+                    if cond {
+                        for st in t {
+                            self.interpret_stmt(st)?;
+                        }
+                    } else if let Some(stmts) = e {
+                        for st in stmts {
+                            self.interpret_stmt(st)?;
+                        }
+                    }
+                }
+                Ok(())
+            }
         }
     }
 
@@ -198,13 +211,15 @@ impl Interpreter {
                 (Value::String(a), Value::String(b)) => Ok(Value::Bool(a == b)),
                 (Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(a == b)),
                 (Value::None, Value::None) => Ok(Value::Bool(true)),
-                (Value::None, _) => Ok(Value::Bool(false)),
-                (_, Value::None) => Ok(Value::Bool(false)),
-                _ => Err(PyError {
-                    msg: "TypeError: Can't apply binary operator == here".to_owned(),
-                    line: op.line,
-                    column: op.column,
-                }),
+                // (Value::None, _) => Ok(Value::Bool(false)),
+                // (_, Value::None) => Ok(Value::Bool(false)),
+                // TODO: does not returning an error work?
+                // _ => Err(PyError {
+                //     msg: "TypeError: Can't apply binary operator == here".to_owned(),
+                //     line: op.line,
+                //     column: op.column,
+                // }),
+                _ => Ok(Value::Bool(false)),
             },
             BiOpType::NotEqual => match (left, right) {
                 (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a != b)),
@@ -214,13 +229,15 @@ impl Interpreter {
                 (Value::String(a), Value::String(b)) => Ok(Value::Bool(a != b)),
                 (Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(a != b)),
                 (Value::None, Value::None) => Ok(Value::Bool(false)),
-                (Value::None, _) => Ok(Value::Bool(true)),
-                (_, Value::None) => Ok(Value::Bool(true)),
-                _ => Err(PyError {
-                    msg: "TypeError: Can't apply binary operator != here".to_owned(),
-                    line: op.line,
-                    column: op.column,
-                }),
+                // (Value::None, _) => Ok(Value::Bool(true)),
+                // (_, Value::None) => Ok(Value::Bool(true)),
+                // TODO: same question as double equal
+                // _ => Err(PyError {
+                //     msg: "TypeError: Can't apply binary operator != here".to_owned(),
+                //     line: op.line,
+                //     column: op.column,
+                // }),
+                _ => Ok(Value::Bool(true)),
             },
             BiOpType::Greater => match (left, right) {
                 (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a > b)),
