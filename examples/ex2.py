@@ -1,8 +1,16 @@
-x = 7
+if True:
+    print("True")
 
-if x == 2:
-    print("zwei")
-elif x == 5:
-    print("fünf")
+a = 3
+if a == 2:
+    print("a ist 2")
+    a = "jetzt nicht mehr"
 else:
-    print("weiß auch nicht")
+    print("a ist nicht 2")
+    a = "was anderes"
+
+b = a + " hehe"
+if b == "jetzt nicht mehr hehe":
+    print(b)
+else:
+    print(a)
