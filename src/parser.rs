@@ -44,13 +44,13 @@ impl Parser {
     /////////////
     // see grammar.txt
 
-    // stmt -> exprStmt | printStmt | assignStmt
+    // stmt -> exprStmt | printStmt | assignStmt | ifStmt
     fn statement(&mut self) -> Result<Stmt, PyError> {
         if self.check_advance(vec![TokenType::Print]) {
             return self.print_statement();
         }
 
-        // only go to assignStmt if there is an id followed by =, else go to exprStmt
+        // only go to assignStmt if there is an id followed by =
         if self.check_advance(vec![TokenType::Identifier("".to_owned())]) {
             if self.check_advance(vec![TokenType::Equal]) {
                 return self.assign_statement();
@@ -58,6 +58,10 @@ impl Parser {
                 // needed to idx points back at identifier and doesn't skip it
                 self.current_idx -= 1;
             }
+        }
+
+        if self.check_advance(vec![TokenType::If]) {
+            return self.if_statement();
         }
 
         self.expression_statement()
@@ -92,6 +96,45 @@ impl Parser {
         self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: no newline after statement found".to_owned())?;
 
         Ok(Stmt::Assign(name, ex))
+    }
+
+    // ifStmt -> "if" expr ":" block ("else" ":" block)?
+    fn if_statement(&mut self) -> Result<Stmt, PyError> {
+        let cond = self.expression()?;
+        self.check_or_error(vec![TokenType::Colon], "SyntaxError: missing colon after if statement".to_owned())?;
+
+        let then = self.block()?;
+        let maybe_else = if self.check_advance(vec![TokenType::Else]) {
+            self.check_or_error(vec![TokenType::Colon], "SyntaxError: missing colon after else statement".to_owned())?;
+            Some(self.block()?)
+        } else {
+            None
+        };
+
+        Ok(Stmt::If(cond, then, maybe_else))
+    }
+
+    // block -> "\n" INDENT stmt* DEDENT
+    fn block(&mut self) -> Result<Vec<Stmt>, PyError> {
+        self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: missing newline before block".to_owned())?;
+        self.check_or_error(vec![TokenType::Indent], "SyntaxError: missing indent before block".to_owned())?;
+
+           
+        let mut statements = Vec::new();
+        while !self.check_advance(vec![TokenType::Dedent]) {
+            // ignore end of lines that haven't been parsed in a rule in order to ignore blank lines
+            if self.check_advance(vec![TokenType::EndOfLine]) {
+                continue;
+            }
+            match self.statement() {
+                Ok(s) => statements.push(s),
+                Err(e) => {
+                    return Err(e);
+                },
+            }
+        }
+
+        Ok(statements)
     }
 
     // expr -> equality
@@ -272,6 +315,13 @@ impl Parser {
             return Ok(Expr::Grouping(Box::new(ex)));
         }
 
+        if self.check_advance(vec![TokenType::Indent, TokenType::Dedent]) {
+            return Err(PyError {
+                msg: "IndentationError: unexpected indent/dedent".to_owned(),
+                line: self.tokens[self.current_idx].line,
+                column: self.tokens[self.current_idx].column,
+            });
+        }
         Err(PyError {
             msg: "SyntaxError: Unexpected or missing token".to_owned(),
             line: self.tokens[self.current_idx].line,
