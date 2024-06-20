@@ -16,12 +16,15 @@ pub fn parse(tokens: Vec<Token>) -> Option<Vec<Stmt>> {
         match p.statement() {
             Ok(s) => statements.push(s),
             Err(e) => {
+                // NOTE: not harsh enough because some statements span more than one line
+                // because of this parser breaks for now to prevent cascading errors
                 // advance to next line on error
-                while !p.check_type(vec![TokenType::EndOfLine, TokenType::EndOfFile]) {
-                    p.current_idx += 1;
-                }
+                // while !p.check_type(vec![TokenType::EndOfLine, TokenType::EndOfFile]) {
+                //     p.current_idx += 1;
+                // }
                 error = true;
                 println!("{e}");
+                break;
             },
         }
     }
