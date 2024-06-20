@@ -58,7 +58,7 @@ impl Parser {
             if self.check_advance(vec![TokenType::Equal]) {
                 return self.assign_statement();
             } else {
-                // needed to idx points back at identifier and doesn't skip it
+                // needed so idx points back at identifier and doesn't skip it
                 self.current_idx -= 1;
             }
         }
@@ -121,7 +121,6 @@ impl Parser {
     fn block(&mut self) -> Result<Vec<Stmt>, PyError> {
         self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: missing newline before block".to_owned())?;
         self.check_or_error(vec![TokenType::Indent], "SyntaxError: missing indent before block".to_owned())?;
-
            
         let mut statements = Vec::new();
         while !self.check_advance(vec![TokenType::Dedent]) {
@@ -136,13 +135,52 @@ impl Parser {
                 },
             }
         }
-
         Ok(statements)
     }
 
     // expr -> equality
     fn expression(&mut self) -> Result<Expr, PyError> {
-        self.equality()
+        self.disjunction()
+    }
+
+    // disjunction -> conjunction ("and" conjunction)*
+    fn disjunction(&mut self) -> Result<Expr, PyError> {
+        let mut ex = self.conjunction()?;
+        while self.check_advance(vec![TokenType::Or]) {
+            // turn the token into a BiOp
+            let tok = &self.tokens[self.current_idx - 1];
+            let op = match tok.token_type {
+                TokenType::Or => BiOp {
+                    ty: BiOpType::Or,
+                    line: tok.line,
+                    column: tok.column,
+                },
+                _ => panic!("In disjunction(): op token_type was not Or, error probably in check_advance() or disjunction()"),
+            };
+            let right = self.conjunction()?;
+            ex = Expr::Binary(Box::new(ex), op, Box::new(right));
+        }
+        Ok(ex)
+    }
+
+    // conjunction -> equality ("and" equality)*
+    fn conjunction(&mut self) -> Result<Expr, PyError> {
+        let mut ex = self.equality()?;
+        while self.check_advance(vec![TokenType::And]) {
+            // turn the token into a BiOp
+            let tok = &self.tokens[self.current_idx - 1];
+            let op = match tok.token_type {
+                TokenType::And => BiOp {
+                    ty: BiOpType::And,
+                    line: tok.line,
+                    column: tok.column,
+                },
+                _ => panic!("In conjunction(): op token_type was not And, error probably in check_advance() or conjunction()"),
+            };
+            let right = self.equality()?;
+            ex = Expr::Binary(Box::new(ex), op, Box::new(right));
+        }
+        Ok(ex)
     }
 
     // equality -> comparison (("=="|"!=") comparison)*

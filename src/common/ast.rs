@@ -48,6 +48,8 @@ pub enum BiOpType {
     GreaterEqual,
     Less,
     LessEqual,
+    And,
+    Or,
 }
 
 pub enum Lit {
@@ -105,6 +107,8 @@ impl fmt::Debug for BiOp {
             BiOpType::GreaterEqual => write!(f, ">="),
             BiOpType::Less => write!(f, "<"),
             BiOpType::LessEqual => write!(f, "<="),
+            BiOpType::And => write!(f, "and"),
+            BiOpType::Or => write!(f, "or"),
         }
     }
 }
