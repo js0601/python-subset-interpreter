@@ -12,7 +12,9 @@ ifStmt        -> "if" expr ":" block ("else" ":" block)?
 
 block         -> "\n" INDENT stmt* DEDENT
 
-expr          -> equality
+expr          -> disjunction
+disjunction   -> conjunction ("or" conjuction)*
+conjunction   -> equality ("and" equality)*
 equality      -> comparison (("==" | "!=") comparison)*
 comparison    -> term ((">" | ">=" | "<" | "<=") term)*
 term          -> factor (("+" | "-") factor)*
