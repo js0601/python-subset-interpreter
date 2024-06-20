@@ -1,5 +1,4 @@
-// TODO: add some doc
-// TODO: add unit tests
+// TODO: rewrite this to use a struct like parser does
 
 use std::cmp::Ordering;
 
@@ -238,6 +237,7 @@ fn build_string(
     for c in code {
         err_idx += 1;
         match c {
+            // TODO: problem: need some way to escape double quotes, otherwise they can't be used in string
             // end string
             '"' => break,
             // missing " at end
