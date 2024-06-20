@@ -23,6 +23,19 @@ impl fmt::Display for Value {
     }
 }
 
+impl Value {
+    fn to_bool(&self) -> bool {
+        match self {
+            Value::Int(n) if *n == 0 => false,
+            Value::Float(n) if *n == 0.0 => false,
+            Value::String(s) if s.is_empty() => false,
+            Value::Bool(b) => *b,
+            Value::None => false,
+            _ => true,
+        }
+    }
+}
+
 struct Environment {
     // TODO: when I get to functions, this needs some way to scope variables
     // maybe a Option<Box<Environment>> to point at Env that encloses this one
@@ -59,7 +72,7 @@ pub fn interpret(stmts: Vec<Stmt>) {
             Ok(_) => continue,
             Err(e) => {
                 println!("{e}");
-                break; // TODO: maybe continue?
+                break;
             }
         }
     }
@@ -87,15 +100,14 @@ impl Interpreter {
                 Ok(())
             }
             Stmt::If(c, t, e) => {
-                if let Value::Bool(cond) = self.eval_expr(c)? {
-                    if cond {
-                        for st in t {
-                            self.interpret_stmt(st)?;
-                        }
-                    } else if let Some(stmts) = e {
-                        for st in stmts {
-                            self.interpret_stmt(st)?;
-                        }
+                let cond = self.eval_expr(c)?.to_bool();
+                if cond {
+                    for st in t {
+                        self.interpret_stmt(st)?;
+                    }
+                } else if let Some(stmts) = e {
+                    for st in stmts {
+                        self.interpret_stmt(st)?;
                     }
                 }
                 Ok(())
@@ -125,16 +137,14 @@ impl Interpreter {
                 line: op.line,
                 column: op.column,
             }),
-            (UnOpType::Not, Value::Int(n)) => Ok(Value::Bool(n == 0)),
-            (UnOpType::Not, Value::Float(n)) => Ok(Value::Bool(n == 0.0)),
-            (UnOpType::Not, Value::Bool(b)) => Ok(Value::Bool(!b)),
-            (_, Value::String(_)) => Err(PyError {
-                msg: "TypeError: Can't apply unary operator to String".to_owned(),
+            (UnOpType::Not, a) => Ok(Value::Bool(!a.to_bool())),
+            (UnOpType::Minus, Value::String(_)) => Err(PyError {
+                msg: "TypeError: Can't apply unary operator - to String".to_owned(),
                 line: op.line,
                 column: op.column,
             }),
-            (_, Value::None) => Err(PyError {
-                msg: "TypeError: Can't apply unary operator to None".to_owned(),
+            (UnOpType::Minus, Value::None) => Err(PyError {
+                msg: "TypeError: Can't apply unary operator - to None".to_owned(),
                 line: op.line,
                 column: op.column,
             }),
@@ -211,15 +221,8 @@ impl Interpreter {
                 (Value::String(a), Value::String(b)) => Ok(Value::Bool(a == b)),
                 (Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(a == b)),
                 (Value::None, Value::None) => Ok(Value::Bool(true)),
-                // (Value::None, _) => Ok(Value::Bool(false)),
-                // (_, Value::None) => Ok(Value::Bool(false)),
-                // TODO: does not returning an error work?
-                // _ => Err(PyError {
-                //     msg: "TypeError: Can't apply binary operator == here".to_owned(),
-                //     line: op.line,
-                //     column: op.column,
-                // }),
                 _ => Ok(Value::Bool(false)),
+                // TODO: in python 1 == True and 0 == False, but other numbers are not equal to either, maybe implement
             },
             BiOpType::NotEqual => match (left, right) {
                 (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a != b)),
@@ -229,15 +232,8 @@ impl Interpreter {
                 (Value::String(a), Value::String(b)) => Ok(Value::Bool(a != b)),
                 (Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(a != b)),
                 (Value::None, Value::None) => Ok(Value::Bool(false)),
-                // (Value::None, _) => Ok(Value::Bool(true)),
-                // (_, Value::None) => Ok(Value::Bool(true)),
-                // TODO: same question as double equal
-                // _ => Err(PyError {
-                //     msg: "TypeError: Can't apply binary operator != here".to_owned(),
-                //     line: op.line,
-                //     column: op.column,
-                // }),
                 _ => Ok(Value::Bool(true)),
+                // TODO: see double equal above
             },
             BiOpType::Greater => match (left, right) {
                 (Value::Int(a), Value::Int(b)) => Ok(Value::Bool(a > b)),
