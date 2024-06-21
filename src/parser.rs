@@ -67,6 +67,10 @@ impl Parser {
             return self.if_statement();
         }
 
+        if self.check_advance(vec![TokenType::While]) {
+            return self.while_statement();
+        }
+
         self.expression_statement()
     }
 
@@ -104,7 +108,7 @@ impl Parser {
     // ifStmt -> "if" expr ":" block ("else" ":" block)?
     fn if_statement(&mut self) -> Result<Stmt, PyError> {
         let cond = self.expression()?;
-        self.check_or_error(vec![TokenType::Colon], "SyntaxError: missing colon after if statement".to_owned())?;
+        self.check_or_error(vec![TokenType::Colon], "SyntaxError: missing colon or expression after if statement".to_owned())?;
 
         let then = self.block()?;
         let maybe_else = if self.check_advance(vec![TokenType::Else]) {
@@ -115,6 +119,14 @@ impl Parser {
         };
 
         Ok(Stmt::If(cond, then, maybe_else))
+    }
+
+    // whileStmt -> "while" expr ":" block
+    fn while_statement(&mut self) -> Result<Stmt, PyError> {
+        let cond = self.expression()?;
+        self.check_or_error(vec![TokenType::Colon], "SyntaxError: missing colon or expression after while statement".to_owned())?;
+        let block = self.block()?;
+        Ok(Stmt::While(cond, block))
     }
 
     // block -> "\n" INDENT stmt* DEDENT

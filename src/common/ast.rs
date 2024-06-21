@@ -1,11 +1,13 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
     Assign(Name, Expr),
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
+    While(Expr, Vec<Stmt>),
 }
 
+#[derive(Clone)]
 pub enum Expr {
     Unary(UnOp, Box<Expr>),
     Binary(Box<Expr>, BiOp, Box<Expr>),
@@ -14,29 +16,34 @@ pub enum Expr {
     Variable(Name),
 }
 
+#[derive(Clone)]
 pub struct Name {
     pub name: String,
     pub line: u64,
     pub column: u64,
 }
 
+#[derive(Clone)]
 pub struct UnOp {
     pub ty: UnOpType,
     pub line: u64,
     pub column: u64,
 }
 
+#[derive(Clone)]
 pub enum UnOpType {
     Minus,
     Not,
 }
 
+#[derive(Clone)]
 pub struct BiOp {
     pub ty: BiOpType,
     pub line: u64,
     pub column: u64,
 }
 
+#[derive(Clone)]
 pub enum BiOpType {
     Plus,
     Minus,
@@ -52,6 +59,7 @@ pub enum BiOpType {
     Or,
 }
 
+#[derive(Clone)]
 pub enum Lit {
     Int(u64),
     Float(f64),
