@@ -112,6 +112,14 @@ impl Interpreter {
                 }
                 Ok(())
             }
+            Stmt::While(c, b) => {
+                while self.eval_expr(c.clone())?.to_bool() {
+                    for st in b.clone() {
+                        self.interpret_stmt(st)?;
+                    }
+                }
+                Ok(())
+            }
         }
     }
 
