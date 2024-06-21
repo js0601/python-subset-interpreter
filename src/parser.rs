@@ -73,7 +73,7 @@ impl Parser {
     // exprStmt -> expr "\n"
     fn expression_statement(&mut self) -> Result<Stmt, PyError> {
         let ex = self.expression()?;
-        self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: no newline after statement found".to_owned())?;
+        self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: unexpected or missing token after statement (expected newline)".to_owned())?;
 
         Ok(Stmt::Expr(ex))
     }
@@ -84,7 +84,7 @@ impl Parser {
         self.check_or_error(vec![TokenType::LeftParen], "SyntaxError: missing ( in call to print".to_owned())?;
         let ex = self.expression()?;
         self.check_or_error(vec![TokenType::RightParen], "SyntaxError: missing ) in call to print".to_owned())?;
-        self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: no newline after statement found".to_owned())?;
+        self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: unexpected or missing token after statement (expected newline)".to_owned())?;
 
         Ok(Stmt::Print(ex))
     }
@@ -96,7 +96,7 @@ impl Parser {
         let name = Name {name: id.value.to_owned(), line: id.line, column: id.column };
 
         let ex = self.expression()?;
-        self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: no newline after statement found".to_owned())?;
+        self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: unexpected or missing token after statement (expected newline)".to_owned())?;
 
         Ok(Stmt::Assign(name, ex))
     }
@@ -356,6 +356,7 @@ impl Parser {
             return Ok(Expr::Grouping(Box::new(ex)));
         }
 
+        // TODO: really necessary??
         if self.check_advance(vec![TokenType::Indent, TokenType::Dedent]) {
             return Err(PyError {
                 msg: "IndentationError: unexpected indent/dedent".to_owned(),
