@@ -39,6 +39,8 @@ pub enum TokenType {
     Return,
     Print,
     None,
+    Break,
+    Continue,
 
     // literals
     Identifier(String),
@@ -222,6 +224,18 @@ impl Token {
             TokenType::None => Self {
                 token_type,
                 value: "None".to_owned(),
+                line,
+                column,
+            },
+            TokenType::Break => Self {
+                token_type,
+                value: "break".to_owned(),
+                line,
+                column,
+            },
+            TokenType::Continue => Self {
+                token_type,
+                value: "continue".to_owned(),
                 line,
                 column,
             },
