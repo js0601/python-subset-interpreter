@@ -5,8 +5,6 @@ stmt          -> exprStmt
                | assignStmt
                | ifStmt
                | whileStmt
-               | "break"
-               | "continue"
 
 exprStmt      -> expr "\n"
 printStmt     -> "print" "(" expr ")" "\n"
