@@ -5,3 +5,5 @@ target/
 *.pdb
 
 .idea/
+test.py
+todo.txt
