@@ -381,8 +381,6 @@ fn check_keywords(text: &str) -> Option<TokenType> {
         "return" => Some(TokenType::Return),
         "print" => Some(TokenType::Print),
         "None" => Some(TokenType::None),
-        "break" => Some(TokenType::Break),
-        "continue" => Some(TokenType::Continue),
         _ => None,
     }
 }

@@ -5,8 +5,6 @@ pub enum Stmt {
     Assign(Name, Expr),
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     While(Expr, Vec<Stmt>),
-    Break(u64, u64), // TODO: needed for error msg outside of loop??
-    Continue(u64, u64),
 }
 
 #[derive(Clone)]
