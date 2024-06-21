@@ -279,6 +279,20 @@ impl Interpreter {
                     column: op.column,
                 }),
             },
+            BiOpType::And => {
+                if !left.to_bool() {
+                    Ok(left)
+                } else {
+                    Ok(right)
+                }
+            }
+            BiOpType::Or => {
+                if left.to_bool() {
+                    Ok(left)
+                } else {
+                    Ok(right)
+                }
+            }
         }
     }
 
