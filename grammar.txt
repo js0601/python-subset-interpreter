@@ -4,11 +4,13 @@ stmt          -> exprStmt
                | printStmt
                | assignStmt
                | ifStmt
+               | whileStmt
 
 exprStmt      -> expr "\n"
 printStmt     -> "print" "(" expr ")" "\n"
 assignStmt    -> IDENTIFIER "=" expr "\n"
 ifStmt        -> "if" expr ":" block ("else" ":" block)?
+whileStmt     -> "while" expr ":" block
 
 block         -> "\n" INDENT stmt* DEDENT
 
