@@ -47,12 +47,11 @@ impl Parser {
     /////////////
     // see grammar.txt
 
-    // stmt -> exprStmt | printStmt | assignStmt | ifStmt
+    // stmt -> exprStmt | printStmt | assignStmt | ifStmt | whileStmt | "break" | "continue"
     fn statement(&mut self) -> Result<Stmt, PyError> {
         if self.check_advance(vec![TokenType::Print]) {
             return self.print_statement();
         }
-
         // only go to assignStmt if there is an id followed by =
         if self.check_advance(vec![TokenType::Identifier("".to_owned())]) {
             if self.check_advance(vec![TokenType::Equal]) {
@@ -62,13 +61,19 @@ impl Parser {
                 self.current_idx -= 1;
             }
         }
-
         if self.check_advance(vec![TokenType::If]) {
             return self.if_statement();
         }
-
         if self.check_advance(vec![TokenType::While]) {
             return self.while_statement();
+        }
+        if self.check_advance(vec![TokenType::Break, TokenType::Continue]) {
+            let prev_tok = &self.tokens[self.current_idx - 1];
+            return match prev_tok.token_type {
+                TokenType::Break => Ok(Stmt::Break(prev_tok.line, prev_tok.column)),
+                TokenType::Continue => Ok(Stmt::Continue(prev_tok.line, prev_tok.column)),
+                _ => panic!("while parsing break or continue: token was not break or continue, error in check_advance() or here"),
+            };
         }
 
         self.expression_statement()
