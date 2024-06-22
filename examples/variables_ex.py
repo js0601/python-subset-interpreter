@@ -7,7 +7,7 @@ print(b)
 print(c)
 
 # reassignment
-a = 10 + 2 * 3
+a = a + 2 * 3
 print(a)
 
 # dynamic typing
