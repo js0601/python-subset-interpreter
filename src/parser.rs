@@ -47,7 +47,7 @@ impl Parser {
     /////////////
     // see grammar.txt
 
-    // stmt -> exprStmt | printStmt | assignStmt | ifStmt | whileStmt | "break" | "continue"
+    // stmt -> exprStmt | printStmt | assignStmt | ifStmt | whileStmt
     fn statement(&mut self) -> Result<Stmt, PyError> {
         if self.check_advance(vec![TokenType::Print]) {
             return self.print_statement();

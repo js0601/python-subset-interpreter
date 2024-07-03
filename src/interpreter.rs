@@ -37,9 +37,7 @@ impl Value {
 }
 
 struct Environment {
-    // TODO: when I get to functions, this needs some way to scope variables
-    // maybe a Option<Box<Environment>> to point at Env that encloses this one
-    // would need to change get method to first search the env on which it is called, then recursively the one enclosing it, until None in which case it errors
+    enclosed_by: Option<Box<Environment>>,
     vars: HashMap<String, Value>,
 }
 
@@ -48,14 +46,20 @@ impl Environment {
         self.vars.insert(name, val);
     }
 
-    fn get(&mut self, var: Name) -> Result<Value, PyError> {
+    fn get(&self, var: Name) -> Result<Value, PyError> {
         match self.vars.get(&var.name) {
             Some(v) => Ok(v.clone()),
-            None => Err(PyError {
-                msg: format!("NameError: name {} is not defined", var.name),
-                line: var.line,
-                column: var.column,
-            }),
+            None => {
+                if let Some(e) = &self.enclosed_by {
+                    e.get(var)
+                } else {
+                    Err(PyError {
+                        msg: format!("NameError: name {} is not defined", var.name),
+                        line: var.line,
+                        column: var.column,
+                    })
+                }
+            }
         }
     }
 }
@@ -64,6 +68,7 @@ impl Environment {
 pub fn interpret(stmts: Vec<Stmt>) {
     let mut int = Interpreter {
         env: Environment {
+            enclosed_by: None,
             vars: HashMap::new(),
         },
     };
