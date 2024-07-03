@@ -5,6 +5,7 @@ pub enum Stmt {
     Assign(Name, Expr),
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     While(Expr, Vec<Stmt>),
+    FunDecl(Name, Vec<Name>, Vec<Stmt>),
 }
 
 #[derive(Clone)]

@@ -47,7 +47,7 @@ impl Parser {
     /////////////
     // see grammar.txt
 
-    // stmt -> exprStmt | printStmt | assignStmt | ifStmt | whileStmt
+    // stmt -> exprStmt | printStmt | assignStmt | ifStmt | whileStmt | funDecl
     fn statement(&mut self) -> Result<Stmt, PyError> {
         if self.check_advance(vec![TokenType::Print]) {
             return self.print_statement();
@@ -66,6 +66,9 @@ impl Parser {
         }
         if self.check_advance(vec![TokenType::While]) {
             return self.while_statement();
+        }
+        if self.check_advance(vec![TokenType::Def]) {
+            return self.function_declaration();
         }
 
         self.expression_statement()
@@ -124,6 +127,32 @@ impl Parser {
         self.check_or_error(vec![TokenType::Colon], "SyntaxError: missing colon or expression after while statement".to_owned())?;
         let block = self.block()?;
         Ok(Stmt::While(cond, block))
+    }
+
+    // funDecl -> "def" IDENTIFIER "(" parameters? ")" ":" block
+    fn function_declaration(&mut self) -> Result<Stmt, PyError> {
+        self.check_or_error(vec![TokenType::Identifier("".to_owned())], "SyntaxError: missing name in def statement".to_owned())?;
+        let id_tok = &self.tokens[self.current_idx - 1];
+        let name;
+        if let TokenType::Identifier(n) = &id_tok.token_type {
+            name = Name { name: n.to_owned(), line: id_tok.line, column: id_tok.column };
+        } else {
+            panic!("expected Identifier token here");
+        }
+
+        self.check_or_error(vec![TokenType::LeftParen], "SyntaxError: missing ( in def statement".to_owned())?;
+        let params = self.parameters()?;
+        self.check_or_error(vec![TokenType::RightParen], "SyntaxError: missing ) in def statement".to_owned())?;
+
+        self.check_or_error(vec![TokenType::Colon], "SyntaxError: missing colon after def statement".to_owned())?;
+        let body = self.block()?;
+
+        Ok(Stmt::FunDecl(name, params, body))
+    }
+
+    // parameters -> IDENTIFIER ("," IDENTIFIER)*
+    fn parameters(&mut self) -> Result<Vec<Name>, PyError> {
+        
     }
 
     // block -> "\n" INDENT stmt* DEDENT
@@ -339,7 +368,9 @@ impl Parser {
                 let id_tok = self.tokens[self.current_idx - 2].clone();
                 let args = self.arguments()?;
                 if let TokenType::Identifier(n) = id_tok.token_type {
-                    return Ok(Expr::Call(Name { name: n.to_owned() , line: id_tok.line, column: id_tok.column }, args));
+                    return Ok(Expr::Call(Name { name: n , line: id_tok.line, column: id_tok.column }, args));
+                } else {
+                    panic!("expected Identifier token here");
                 }
             } else {
                 // go back if only id without parentheses found
