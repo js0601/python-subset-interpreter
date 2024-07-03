@@ -5,14 +5,17 @@ stmt          -> exprStmt
                | assignStmt
                | ifStmt
                | whileStmt
+               | funDecl
 
 exprStmt      -> expr "\n"
 printStmt     -> "print" "(" expr ")" "\n"
 assignStmt    -> IDENTIFIER "=" expr "\n"
 ifStmt        -> "if" expr ":" block ("else" ":" block)?
 whileStmt     -> "while" expr ":" block
+funDecl       -> "def" IDENTIFIER "(" parameters? ")" ":" block
 
 block         -> "\n" INDENT stmt* DEDENT
+parameters    -> IDENTIFIER ("," IDENTIFIER)*
 
 expr          -> disjunction
 disjunction   -> conjunction ("or" conjuction)*
@@ -26,4 +29,6 @@ unary         -> ("-" | "not") unary
 primary       -> NUMBER | STRING
                | "True" | "False" | "None"
                | "(" expr ")"
-               | IDENTIFIER
+               | IDENTIFIER ("(" arguments? ")")?
+
+arguments     -> expr ("," expr)*
