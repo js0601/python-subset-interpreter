@@ -14,6 +14,7 @@ pub enum Expr {
     Grouping(Box<Expr>),
     Literal(Lit),
     Variable(Name),
+    Call(Name, Vec<Expr>),
 }
 
 #[derive(Clone)]
@@ -83,6 +84,7 @@ impl fmt::Debug for Expr {
             Expr::Grouping(ex) => write!(f, "(group {ex:?})"),
             Expr::Literal(l) => write!(f, "{l:?}"),
             Expr::Variable(n) => write!(f, "{n:?}"),
+            Expr::Call(n, p) => write!(f, "{n:?}({p:?})"),
         }
     }
 }

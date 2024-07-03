@@ -331,8 +331,22 @@ impl Parser {
         self.primary()
     }
 
-    // primary -> NUMBER | STRING | "True" | "False" | "None" | "(" expr ")" | IDENTIFIER
+    // primary -> NUMBER | STRING | "True" | "False" | "None" | "(" expr ")" | IDENTIFIER ("(" arguments? ")")?
     fn primary(&mut self) -> Result<Expr, PyError> {
+        if self.check_advance(vec![TokenType::Identifier("".to_owned())]) {
+            if self.check_advance(vec![TokenType::LeftParen]) {
+                // save the id token to later get the line and column from it
+                let id_tok = self.tokens[self.current_idx - 2].clone();
+                let args = self.arguments()?;
+                if let TokenType::Identifier(n) = id_tok.token_type {
+                    return Ok(Expr::Call(Name { name: n.to_owned() , line: id_tok.line, column: id_tok.column }, args));
+                }
+            } else {
+                // go back if only id without parentheses found
+                self.current_idx -= 1;
+            }
+        }
+        
         if self.check_advance(vec![
             TokenType::Identifier("".to_owned()),
             TokenType::String("".to_owned()),
@@ -378,6 +392,19 @@ impl Parser {
             line: self.tokens[self.current_idx].line,
             column: self.tokens[self.current_idx].column, // TODO: sometimes points at wrong column
         })
+    }
+
+    // arguments -> expr ("," expr)*
+    fn arguments(&mut self) -> Result<Vec<Expr>, PyError> {
+        let mut args = Vec::new();
+        while !self.check_advance(vec![TokenType::RightParen]) {
+            args.push(self.expression()?);
+            if self.check_advance(vec![TokenType::Comma]) {
+                // NOTE: this allows e.g. f(1,), but python allows it too so no matter
+                continue;
+            }
+        }
+        Ok(args)
     }
 
     //////////////////////
