@@ -36,6 +36,7 @@ impl Value {
     }
 }
 
+#[derive(Clone)]
 struct Function {
     name: Name,
     parameters: Vec<Name>,
@@ -43,11 +44,8 @@ struct Function {
 }
 
 impl Function {
-    fn arity(&self) -> u64 {
-        self.parameters
-            .len()
-            .try_into()
-            .expect("conversion error from usize to u64 in Function method arity")
+    fn arity(&self) -> usize {
+        self.parameters.len()
     }
 
     fn call(&self, args: Vec<Value>, encl: Environment) -> Result<Value, PyError> {
@@ -77,6 +75,7 @@ impl Function {
     }
 }
 
+#[derive(Clone)]
 struct Environment {
     enclosed_by: Option<Box<Environment>>,
     funcs: HashMap<String, Function>,
@@ -114,6 +113,23 @@ impl Environment {
         };
         self.funcs.insert(n, f);
     }
+
+    fn get_fun(&self, fun: Name) -> Result<Function, PyError> {
+        match self.funcs.get(&fun.name) {
+            Some(f) => Ok(f.clone()),
+            None => {
+                if let Some(e) = &self.enclosed_by {
+                    e.get_fun(fun)
+                } else {
+                    Err(PyError {
+                        msg: format!("NameError: name {} is not defined", fun.name),
+                        line: fun.line,
+                        column: fun.column,
+                    })
+                }
+            }
+        }
+    }
 }
 
 // entry point, goes through all statements and prints errors
@@ -141,6 +157,11 @@ struct Interpreter {
 }
 
 impl Interpreter {
+    // TODO: return values: return Result<Option<Value>, PyError> here
+    // at return statement return Ok(Some(Value))
+    // at every other statement return Ok(None)
+    // in interpret() if it receives Ok(Some(...)) it errors with return outside function, else it continues
+    // in function.call() it breaks and returns received value
     fn interpret_stmt(&mut self, stmt: Stmt) -> Result<(), PyError> {
         match stmt {
             Stmt::Expr(e) => {
@@ -192,7 +213,7 @@ impl Interpreter {
             Expr::Grouping(e) => self.eval_expr(*e),
             Expr::Literal(l) => Ok(self.eval_literal(l)),
             Expr::Variable(n) => self.env.get_var(n),
-            Expr::Call(n, a) => todo!(),
+            Expr::Call(n, a) => self.eval_call(n, a),
         }
     }
 
@@ -392,5 +413,28 @@ impl Interpreter {
             Lit::False => Value::Bool(false),
             Lit::None => Value::None,
         }
+    }
+
+    fn eval_call(&mut self, name: Name, arguments: Vec<Expr>) -> Result<Value, PyError> {
+        let f = self.env.get_fun(name.clone())?;
+        let mut args = Vec::new();
+        for arg in arguments {
+            args.push(self.eval_expr(arg)?);
+        }
+
+        if f.arity() != args.len() {
+            return Err(PyError {
+                msg: format!(
+                    "TypeError: {} takes {} positional arguments but {} were given",
+                    f.name.name,
+                    f.arity(),
+                    args.len()
+                ),
+                line: name.line,
+                column: name.column,
+            });
+        }
+
+        f.call(args, self.env.clone())
     }
 }
