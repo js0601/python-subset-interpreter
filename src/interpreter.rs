@@ -36,22 +36,64 @@ impl Value {
     }
 }
 
+struct Function {
+    name: Name,
+    parameters: Vec<Name>,
+    body: Vec<Stmt>,
+}
+
+impl Function {
+    fn arity(&self) -> u64 {
+        self.parameters
+            .len()
+            .try_into()
+            .expect("conversion error from usize to u64 in Function method arity")
+    }
+
+    fn call(&self, args: Vec<Value>, encl: Environment) -> Result<Value, PyError> {
+        let vars: HashMap<String, Value> = self
+            .parameters
+            .iter()
+            .zip(args.iter())
+            .map(|(param, arg)| (param.name.clone(), arg.clone()))
+            .collect();
+
+        let mut fun_int = Interpreter {
+            env: Environment {
+                enclosed_by: Some(Box::new(encl)),
+                funcs: HashMap::new(),
+                vars,
+            },
+        };
+
+        for st in self.body.clone() {
+            match fun_int.interpret_stmt(st) {
+                Ok(_) => continue,
+                Err(e) => return Err(e),
+            }
+        }
+
+        Ok(Value::None)
+    }
+}
+
 struct Environment {
     enclosed_by: Option<Box<Environment>>,
+    funcs: HashMap<String, Function>,
     vars: HashMap<String, Value>,
 }
 
 impl Environment {
-    fn assign(&mut self, name: String, val: Value) {
+    fn assign_var(&mut self, name: String, val: Value) {
         self.vars.insert(name, val);
     }
 
-    fn get(&self, var: Name) -> Result<Value, PyError> {
+    fn get_var(&self, var: Name) -> Result<Value, PyError> {
         match self.vars.get(&var.name) {
             Some(v) => Ok(v.clone()),
             None => {
                 if let Some(e) = &self.enclosed_by {
-                    e.get(var)
+                    e.get_var(var)
                 } else {
                     Err(PyError {
                         msg: format!("NameError: name {} is not defined", var.name),
@@ -62,6 +104,16 @@ impl Environment {
             }
         }
     }
+
+    fn assign_fun(&mut self, name: Name, parameters: Vec<Name>, body: Vec<Stmt>) {
+        let n = name.name.clone();
+        let f = Function {
+            name,
+            parameters,
+            body,
+        };
+        self.funcs.insert(n, f);
+    }
 }
 
 // entry point, goes through all statements and prints errors
@@ -69,6 +121,7 @@ pub fn interpret(stmts: Vec<Stmt>) {
     let mut int = Interpreter {
         env: Environment {
             enclosed_by: None,
+            funcs: HashMap::new(),
             vars: HashMap::new(),
         },
     };
@@ -101,7 +154,7 @@ impl Interpreter {
             }
             Stmt::Assign(n, e) => {
                 let val = self.eval_expr(e)?;
-                self.env.assign(n.name, val);
+                self.env.assign_var(n.name, val);
                 Ok(())
             }
             Stmt::If(c, t, e) => {
@@ -125,6 +178,10 @@ impl Interpreter {
                 }
                 Ok(())
             }
+            Stmt::FunDecl(n, p, b) => {
+                self.env.assign_fun(n, p, b);
+                Ok(())
+            }
         }
     }
 
@@ -134,7 +191,8 @@ impl Interpreter {
             Expr::Binary(e1, op, e2) => self.eval_binary(*e1, op, *e2),
             Expr::Grouping(e) => self.eval_expr(*e),
             Expr::Literal(l) => Ok(self.eval_literal(l)),
-            Expr::Variable(n) => self.env.get(n),
+            Expr::Variable(n) => self.env.get_var(n),
+            Expr::Call(n, a) => todo!(),
         }
     }
 
