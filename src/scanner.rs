@@ -107,7 +107,7 @@ fn scan_indent(
                 *current_idx += 1;
                 *column += 1;
             }
-            '#' => return Ok(()), // ignore indent on comment lines
+            '#' | '\n' => return Ok(()), // ignore indent on comment and blank lines
             _ => break,
         }
     }

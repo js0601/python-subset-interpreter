@@ -142,7 +142,6 @@ impl Parser {
 
         self.check_or_error(vec![TokenType::LeftParen], "SyntaxError: missing ( in def statement".to_owned())?;
         let params = self.parameters()?;
-        self.check_or_error(vec![TokenType::RightParen], "SyntaxError: missing ) in def statement".to_owned())?;
 
         self.check_or_error(vec![TokenType::Colon], "SyntaxError: missing colon after def statement".to_owned())?;
         let body = self.block()?;
@@ -152,7 +151,23 @@ impl Parser {
 
     // parameters -> IDENTIFIER ("," IDENTIFIER)*
     fn parameters(&mut self) -> Result<Vec<Name>, PyError> {
-        
+        let mut params = Vec::new();
+        while !self.check_advance(vec![TokenType::RightParen]) {
+            if self.check_advance(vec![TokenType::Identifier("".to_owned())]) {
+                let id_tok = &self.tokens[self.current_idx - 1];
+                params.push(Name { name: id_tok.value.clone(), line: id_tok.line, column: id_tok.column });
+            }
+            if self.check_advance(vec![TokenType::Comma]) {
+                // NOTE: this allows e.g. def f(a,), but python allows it too so no matter
+                continue;
+            } else {
+                match self.check_or_error(vec![TokenType::RightParen], "SyntaxError: invalid syntax, maybe a missing comma?".to_owned()) {
+                    Ok(_) => break,
+                    Err(e) => return Err(e),
+                }
+            }
+        }
+        Ok(params)
     }
 
     // block -> "\n" INDENT stmt* DEDENT
@@ -433,6 +448,11 @@ impl Parser {
             if self.check_advance(vec![TokenType::Comma]) {
                 // NOTE: this allows e.g. f(1,), but python allows it too so no matter
                 continue;
+            } else {
+                match self.check_or_error(vec![TokenType::RightParen], "SyntaxError: invalid syntax, maybe a missing comma?".to_owned()) {
+                    Ok(_) => break,
+                    Err(e) => return Err(e),
+                }
             }
         }
         Ok(args)
