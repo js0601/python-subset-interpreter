@@ -6,7 +6,7 @@ pub enum Stmt {
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     While(Expr, Vec<Stmt>),
     FunDecl(Name, Vec<Name>, Vec<Stmt>),
-    Return(Option<Expr>),
+    Return(Location, Option<Expr>),
 }
 
 #[derive(Clone)]
@@ -17,6 +17,12 @@ pub enum Expr {
     Literal(Lit),
     Variable(Name),
     Call(Name, Vec<Expr>),
+}
+
+#[derive(Debug, Clone)]
+pub struct Location {
+    pub line: u64,
+    pub column: u64,
 }
 
 #[derive(Clone)]

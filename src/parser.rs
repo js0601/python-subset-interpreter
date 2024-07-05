@@ -153,11 +153,13 @@ impl Parser {
     }
 
     fn return_statement(&mut self) -> Result<Stmt, PyError> {
+        let ret_tok = self.tokens[self.current_idx - 1].clone();
+        let loc = Location {line: ret_tok.line, column: ret_tok.column};
         if !self.check_advance(vec![TokenType::EndOfLine]) {
             let ex = self.expression()?;
-            return Ok(Stmt::Return(Some(ex)));
+            return Ok(Stmt::Return(loc, Some(ex)));
         }
-        Ok(Stmt::Return(None))
+        Ok(Stmt::Return(loc, None))
     }
 
     // parameters -> IDENTIFIER ("," IDENTIFIER)*
