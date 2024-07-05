@@ -6,6 +6,7 @@ stmt          -> exprStmt
                | ifStmt
                | whileStmt
                | funDecl
+               | returnStmt
 
 exprStmt      -> expr "\n"
 printStmt     -> "print" "(" expr ")" "\n"
@@ -13,6 +14,7 @@ assignStmt    -> IDENTIFIER "=" expr "\n"
 ifStmt        -> "if" expr ":" block ("else" ":" block)?
 whileStmt     -> "while" expr ":" block
 funDecl       -> "def" IDENTIFIER "(" parameters? ")" ":" block
+returnStmt    -> "return" expr?
 
 block         -> "\n" INDENT stmt* DEDENT
 parameters    -> IDENTIFIER ("," IDENTIFIER)*

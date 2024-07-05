@@ -6,6 +6,7 @@ pub enum Stmt {
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     While(Expr, Vec<Stmt>),
     FunDecl(Name, Vec<Name>, Vec<Stmt>),
+    Return(Option<Expr>),
 }
 
 #[derive(Clone)]
