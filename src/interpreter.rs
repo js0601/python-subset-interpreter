@@ -66,7 +66,8 @@ impl Function {
 
         for st in self.body.clone() {
             match fun_int.interpret_stmt(st) {
-                Ok(_) => continue,
+                Ok(None) => continue,
+                Ok(Some((_, v))) => return Ok(v),
                 Err(e) => return Err(e),
             }
         }
@@ -143,7 +144,16 @@ pub fn interpret(stmts: Vec<Stmt>) {
     };
     for st in stmts {
         match int.interpret_stmt(st) {
-            Ok(_) => continue,
+            Ok(None) => continue,
+            Ok(Some((l, _))) => {
+                let e = PyError {
+                    msg: "SyntaxError: return statement outside of function".to_owned(),
+                    line: l.line,
+                    column: l.column,
+                };
+                println!("{e}");
+                break;
+            }
             Err(e) => {
                 println!("{e}");
                 break;
@@ -157,26 +167,21 @@ struct Interpreter {
 }
 
 impl Interpreter {
-    // TODO: return values: return Result<Option<Value>, PyError> here
-    // at return statement return Ok(Some(Value))
-    // at every other statement return Ok(None)
-    // in interpret() if it receives Ok(Some(...)) it errors with return outside function, else it continues
-    // in function.call() it breaks and returns received value
-    fn interpret_stmt(&mut self, stmt: Stmt) -> Result<(), PyError> {
+    fn interpret_stmt(&mut self, stmt: Stmt) -> Result<Option<(Location, Value)>, PyError> {
         match stmt {
             Stmt::Expr(e) => {
                 self.eval_expr(e)?;
-                Ok(())
+                Ok(None)
             }
             Stmt::Print(e) => {
                 let val = self.eval_expr(e)?;
                 println!("{val}");
-                Ok(())
+                Ok(None)
             }
             Stmt::Assign(n, e) => {
                 let val = self.eval_expr(e)?;
                 self.env.assign_var(n.name, val);
-                Ok(())
+                Ok(None)
             }
             Stmt::If(c, t, e) => {
                 let cond = self.eval_expr(c)?.to_bool();
@@ -189,7 +194,7 @@ impl Interpreter {
                         self.interpret_stmt(st)?;
                     }
                 }
-                Ok(())
+                Ok(None)
             }
             Stmt::While(c, b) => {
                 while self.eval_expr(c.clone())?.to_bool() {
@@ -197,11 +202,19 @@ impl Interpreter {
                         self.interpret_stmt(st)?;
                     }
                 }
-                Ok(())
+                Ok(None)
             }
             Stmt::FunDecl(n, p, b) => {
                 self.env.assign_fun(n, p, b);
-                Ok(())
+                Ok(None)
+            }
+            Stmt::Return(l, e) => {
+                if let Some(ex) = e {
+                    let val = self.eval_expr(ex)?;
+                    Ok(Some((l, val)))
+                } else {
+                    Ok(Some((l, Value::None)))
+                }
             }
         }
     }
