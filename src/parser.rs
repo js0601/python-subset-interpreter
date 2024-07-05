@@ -70,6 +70,9 @@ impl Parser {
         if self.check_advance(vec![TokenType::Def]) {
             return self.function_declaration();
         }
+        if self.check_advance(vec![TokenType::Return]) {
+            return self.return_statement();
+        }
 
         self.expression_statement()
     }
@@ -147,6 +150,14 @@ impl Parser {
         let body = self.block()?;
 
         Ok(Stmt::FunDecl(name, params, body))
+    }
+
+    fn return_statement(&mut self) -> Result<Stmt, PyError> {
+        if !self.check_advance(vec![TokenType::EndOfLine]) {
+            let ex = self.expression()?;
+            return Ok(Stmt::Return(Some(ex)));
+        }
+        Ok(Stmt::Return(None))
     }
 
     // parameters -> IDENTIFIER ("," IDENTIFIER)*
