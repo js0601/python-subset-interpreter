@@ -1,5 +1,3 @@
-// TODO: rewrite this to use a struct like parser does
-
 use std::cmp::Ordering;
 
 use crate::common::{py_error::*, token::*};
@@ -60,7 +58,6 @@ pub fn scan(code: String) -> Option<Vec<Token>> {
                 }
             },
             // syntax error (unknown token)
-            // TODO: handle error better by returning it from scan and handling it in main
             Err(e) => {
                 error = true;
                 current_idx += 1;
@@ -226,7 +223,7 @@ fn scan_token(
 }
 
 fn build_string(
-    code: impl Iterator<Item = char>,
+    mut code: impl Iterator<Item = char>,
     current_idx: &mut usize,
     line: u64,
     column: &mut u64,
@@ -234,10 +231,31 @@ fn build_string(
     // used for still moving the index in case of error
     let mut err_idx = *current_idx;
     let mut text = String::new();
-    for c in code {
+    while let Some(c) = code.next() {
         err_idx += 1;
         match c {
-            // TODO: problem: need some way to escape double quotes, otherwise they can't be used in string
+            '\\' => {
+                *current_idx += 1;
+                err_idx += 1;
+                match code.next() {
+                    Some(c) => match c {
+                        '"' | '\\' => text.push(c),
+                        'n' => text.push('\n'),
+                        _ => {
+                            *current_idx += 1;
+                            continue;
+                        }
+                    },
+                    None => {
+                        *current_idx = err_idx - 1;
+                        return Err(PyError {
+                            msg: format!("SyntaxError: Unterminated String: \"{text}"),
+                            line,
+                            column: *column,
+                        });
+                    }
+                }
+            }
             // end string
             '"' => break,
             // missing " at end
@@ -256,7 +274,6 @@ fn build_string(
     Ok(Some(Token::create(TokenType::String(text), line, *column)))
 }
 
-// TODO: very big, might want to refactor
 fn build_number(
     mut code: impl Iterator<Item = char>,
     current_char: char,
@@ -298,7 +315,6 @@ fn build_number(
                         }
                         _ => {
                             *current_idx = err_idx;
-                            // TODO: error msg could show what follows instead
                             return Err(PyError {
                                 msg: "SyntaxError: Floating Point not followed by number"
                                     .to_string(),
