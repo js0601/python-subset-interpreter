@@ -30,7 +30,8 @@ unary         -> ("-" | "not") unary
                | primary
 primary       -> NUMBER | STRING
                | "True" | "False" | "None"
+               | "[" arguments? "]"
                | "(" expr ")"
-               | IDENTIFIER ("(" arguments? ")")?
+               | IDENTIFIER ("(" arguments? ")" | "[" NUMBER "]")?
 
 arguments     -> expr ("," expr)*
