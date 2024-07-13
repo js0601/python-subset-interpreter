@@ -32,6 +32,6 @@ primary       -> NUMBER | STRING
                | "True" | "False" | "None"
                | "[" arguments? "]"
                | "(" expr ")"
-               | IDENTIFIER ("(" arguments? ")" | "[" NUMBER "]")?
+               | IDENTIFIER ("(" arguments? ")" | "[" expr "]")?
 
 arguments     -> expr ("," expr)*
