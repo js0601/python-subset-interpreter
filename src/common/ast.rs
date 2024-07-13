@@ -17,6 +17,7 @@ pub enum Expr {
     Literal(Lit),
     Variable(Name),
     Call(Name, Vec<Expr>),
+    ListAccess(Name, usize),
 }
 
 #[derive(Debug, Clone)]
@@ -73,6 +74,7 @@ pub enum Lit {
     Int(u64),
     Float(f64),
     String(String),
+    List(Vec<Expr>),
     True,
     False,
     None,
@@ -93,6 +95,7 @@ impl fmt::Debug for Expr {
             Expr::Literal(l) => write!(f, "{l:?}"),
             Expr::Variable(n) => write!(f, "{n:?}"),
             Expr::Call(n, p) => write!(f, "{n:?}({p:?})"),
+            Expr::ListAccess(n, i) => write!(f, "{n:?}[{i}]"),
         }
     }
 }
@@ -137,6 +140,7 @@ impl fmt::Debug for Lit {
             Lit::Int(x) => write!(f, "{x}"),
             Lit::Float(x) => write!(f, "{x}"),
             Lit::String(s) => write!(f, "\"{s}\""),
+            Lit::List(l) => write!(f, "{l:?}"),
             Lit::True => write!(f, "True"),
             Lit::False => write!(f, "False"),
             Lit::None => write!(f, "None"),
