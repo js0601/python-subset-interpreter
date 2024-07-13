@@ -388,15 +388,26 @@ impl Parser {
         self.primary()
     }
 
-    // primary -> NUMBER | STRING | "True" | "False" | "None" | "(" expr ")" | IDENTIFIER ("(" arguments? ")")?
+    // primary -> NUMBER | STRING | "True" | "False" | "None" | "[" arguments? "]" | "(" expr ")" | IDENTIFIER ("(" arguments? ")" | "[" NUMBER "]")?
     fn primary(&mut self) -> Result<Expr, PyError> {
         if self.check_advance(vec![TokenType::Identifier("".to_owned())]) {
             if self.check_advance(vec![TokenType::LeftParen]) {
                 // save the id token to later get the line and column from it
                 let id_tok = self.tokens[self.current_idx - 2].clone();
                 let args = self.arguments()?;
+
                 if let TokenType::Identifier(n) = id_tok.token_type {
                     return Ok(Expr::Call(Name { name: n , line: id_tok.line, column: id_tok.column }, args));
+                } else {
+                    panic!("expected Identifier token here");
+                }
+            } else if self.check_advance(vec![TokenType::LeftBracket]) {
+                let id_tok = self.tokens[self.current_idx - 2].clone();
+                let idx = self.expression()?;
+                self.check_or_error(vec![TokenType::RightBracket], "SyntaxError: Missing closing brackets".to_owned())?;
+
+                if let TokenType::Identifier(n) = id_tok.token_type {
+                        return Ok(Expr::ListAccess(Name { name: n, line: id_tok.line, column: id_tok.column },Box::new(idx) ));
                 } else {
                     panic!("expected Identifier token here");
                 }
