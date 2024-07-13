@@ -166,6 +166,8 @@ fn scan_token(
         ':' => Ok(Some(Token::create(TokenType::Colon, line, *column))),
         '(' => Ok(Some(Token::create(TokenType::LeftParen, line, *column))),
         ')' => Ok(Some(Token::create(TokenType::RightParen, line, *column))),
+        '[' => Ok(Some(Token::create(TokenType::LeftBracket, line, *column))),
+        ']' => Ok(Some(Token::create(TokenType::RightBracket, line, *column))),
         ',' => Ok(Some(Token::create(TokenType::Comma, line, *column))),
         '\n' => Ok(Some(Token::create(TokenType::EndOfLine, line, *column))),
 
