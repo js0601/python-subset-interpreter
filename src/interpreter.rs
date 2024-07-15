@@ -233,7 +233,7 @@ impl Interpreter {
             Expr::Literal(l) => self.eval_literal(l),
             Expr::Variable(n) => self.env.get_var(n),
             Expr::Call(n, a) => self.eval_call(n, a),
-            Expr::ListAccess(_, _) => todo!(),
+            Expr::ListAccess(n, i) => self.eval_access(n, *i),
         }
     }
 
@@ -478,5 +478,51 @@ impl Interpreter {
         }
 
         f.call(args, self.env.clone())
+    }
+
+    fn eval_access(&mut self, name: Name, idx_ex: Expr) -> Result<Value, PyError> {
+        let idx_val = self.eval_expr(idx_ex)?;
+        let idx;
+        if let Value::Int(i) = idx_val {
+            idx = i;
+        } else {
+            return Err(PyError {
+                msg: "TypeError: List index must be an integer value".to_owned(),
+                line: name.line,
+                column: name.column,
+            });
+        }
+
+        let list_val = self.env.get_var(name.clone())?;
+        let list;
+        if let Value::List(l) = list_val {
+            list = l;
+        } else {
+            return Err(PyError {
+                msg: format!(
+                    "TypeError: {} is not indexable, because it is not a list",
+                    name.name
+                ),
+                line: name.line,
+                column: name.column,
+            });
+        }
+
+        if idx as usize >= list.len() {
+            return Err(PyError {
+                msg: "IndexError: Index out of bounds".to_owned(),
+                line: name.line,
+                column: name.column,
+            });
+        }
+        if idx < 0 {
+            return Err(PyError {
+                msg: "IndexError: Index below zero".to_owned(),
+                line: name.line,
+                column: name.column,
+            });
+        }
+
+        Ok(list[idx as usize].clone())
     }
 }
