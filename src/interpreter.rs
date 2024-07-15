@@ -2,12 +2,13 @@ use std::{collections::HashMap, fmt};
 
 use crate::common::{ast::*, py_error::*};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Int(i128),
     Float(f64),
     String(String),
     Bool(bool),
+    List(Vec<Value>),
     None,
 }
 
@@ -18,6 +19,10 @@ impl fmt::Display for Value {
             Value::Float(n) => write!(f, "{n}"),
             Value::String(s) => write!(f, "{s}"),
             Value::Bool(b) => write!(f, "{b}"),
+            Value::List(e) => {
+                let elems: Vec<String> = e.iter().map(|v| v.to_string()).collect();
+                write!(f, "[{}]", elems.join(", "))
+            }
             Value::None => write!(f, "None"),
         }
     }
@@ -30,6 +35,7 @@ impl Value {
             Value::Float(n) if *n == 0.0 => false,
             Value::String(s) if s.is_empty() => false,
             Value::Bool(b) => *b,
+            Value::List(l) if l.is_empty() => false,
             Value::None => false,
             _ => true,
         }
@@ -224,9 +230,10 @@ impl Interpreter {
             Expr::Unary(op, e) => self.eval_unary(op, *e),
             Expr::Binary(e1, op, e2) => self.eval_binary(*e1, op, *e2),
             Expr::Grouping(e) => self.eval_expr(*e),
-            Expr::Literal(l) => Ok(self.eval_literal(l)),
+            Expr::Literal(l) => self.eval_literal(l),
             Expr::Variable(n) => self.env.get_var(n),
             Expr::Call(n, a) => self.eval_call(n, a),
+            Expr::ListAccess(_, _) => todo!(),
         }
     }
 
@@ -240,6 +247,11 @@ impl Interpreter {
             (UnOpType::Not, a) => Ok(Value::Bool(!a.to_bool())),
             (UnOpType::Minus, Value::String(_)) => Err(PyError {
                 msg: "TypeError: Can't apply unary operator - to String".to_owned(),
+                line: op.line,
+                column: op.column,
+            }),
+            (UnOpType::Minus, Value::List(_)) => Err(PyError {
+                msg: "TypeError: Can't apply unary operator - to List".to_owned(),
                 line: op.line,
                 column: op.column,
             }),
@@ -267,6 +279,13 @@ impl Interpreter {
                 (Value::Bool(a), Value::Float(b)) => Ok(Value::Float(a as i8 as f64 + b)),
                 (Value::Bool(a), Value::Bool(b)) => Ok(Value::Int(a as i128 + b as i128)),
                 (Value::String(a), Value::String(b)) => Ok(Value::String(format!("{a}{b}"))),
+                (Value::List(a), Value::List(b)) => {
+                    // TODO: better way???
+                    let mut a = a.clone();
+                    let mut b = b.clone();
+                    a.append(&mut b);
+                    Ok(Value::List(a))
+                }
                 _ => Err(PyError {
                     msg: "TypeError: Can't apply binary operator + here".to_owned(),
                     line: op.line,
@@ -341,6 +360,7 @@ impl Interpreter {
                 (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a == b)),
                 (Value::String(a), Value::String(b)) => Ok(Value::Bool(a == b)),
                 (Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(a == b)),
+                (Value::List(a), Value::List(b)) => Ok(Value::Bool(a == b)),
                 (Value::None, Value::None) => Ok(Value::Bool(true)),
                 _ => Ok(Value::Bool(false)),
                 // TODO: in python 1 == True and 0 == False, but other numbers are not equal to either, maybe implement
@@ -352,6 +372,7 @@ impl Interpreter {
                 (Value::Float(a), Value::Float(b)) => Ok(Value::Bool(a != b)),
                 (Value::String(a), Value::String(b)) => Ok(Value::Bool(a != b)),
                 (Value::Bool(a), Value::Bool(b)) => Ok(Value::Bool(a != b)),
+                (Value::List(a), Value::List(b)) => Ok(Value::Bool(a != b)),
                 (Value::None, Value::None) => Ok(Value::Bool(false)),
                 _ => Ok(Value::Bool(true)),
                 // TODO: see double equal above
@@ -417,14 +438,22 @@ impl Interpreter {
         }
     }
 
-    fn eval_literal(&mut self, lit: Lit) -> Value {
+    fn eval_literal(&mut self, lit: Lit) -> Result<Value, PyError> {
         match lit {
-            Lit::Int(n) => Value::Int(n.into()),
-            Lit::Float(n) => Value::Float(n),
-            Lit::String(s) => Value::String(s),
-            Lit::True => Value::Bool(true),
-            Lit::False => Value::Bool(false),
-            Lit::None => Value::None,
+            Lit::Int(n) => Ok(Value::Int(n.into())),
+            Lit::Float(n) => Ok(Value::Float(n)),
+            Lit::String(s) => Ok(Value::String(s)),
+            Lit::True => Ok(Value::Bool(true)),
+            Lit::False => Ok(Value::Bool(false)),
+            Lit::List(elems) => {
+                let mut list = vec![];
+                for e in elems {
+                    let el = self.eval_expr(e)?;
+                    list.push(el);
+                }
+                Ok(Value::List(list))
+            }
+            Lit::None => Ok(Value::None),
         }
     }
 
