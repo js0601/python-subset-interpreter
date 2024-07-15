@@ -394,7 +394,7 @@ impl Parser {
             if self.check_advance(vec![TokenType::LeftParen]) {
                 // save the id token to later get the line and column from it
                 let id_tok = self.tokens[self.current_idx - 2].clone();
-                let args = self.arguments()?;
+                let args = self.func_arguments()?;
 
                 if let TokenType::Identifier(n) = id_tok.token_type {
                     return Ok(Expr::Call(Name { name: n , line: id_tok.line, column: id_tok.column }, args));
@@ -404,7 +404,7 @@ impl Parser {
             } else if self.check_advance(vec![TokenType::LeftBracket]) {
                 let id_tok = self.tokens[self.current_idx - 2].clone();
                 let idx = self.expression()?;
-                self.check_or_error(vec![TokenType::RightBracket], "SyntaxError: Missing closing brackets".to_owned())?;
+                self.check_or_error(vec![TokenType::RightBracket], "SyntaxError: Expected closing brackets, found missing or unexpected token".to_owned())?;
 
                 if let TokenType::Identifier(n) = id_tok.token_type {
                         return Ok(Expr::ListAccess(Name { name: n, line: id_tok.line, column: id_tok.column },Box::new(idx) ));
@@ -443,6 +443,11 @@ impl Parser {
             return Ok(Expr::Literal(Lit::None));
         }
 
+        if self.check_advance(vec![TokenType::LeftBracket]) {
+            let elems = self.list_arguments()?;
+            return Ok(Expr::Literal(Lit::List(elems)));
+        }
+
         if self.check_advance(vec![TokenType::LeftParen]) {
             let ex = self.expression()?;
             self.check_or_error(vec![TokenType::RightParen], "SyntaxError: Missing closing parentheses".to_owned())?;
@@ -465,7 +470,7 @@ impl Parser {
     }
 
     // arguments -> expr ("," expr)*
-    fn arguments(&mut self) -> Result<Vec<Expr>, PyError> {
+    fn func_arguments(&mut self) -> Result<Vec<Expr>, PyError> {
         let mut args = Vec::new();
         while !self.check_advance(vec![TokenType::RightParen]) {
             args.push(self.expression()?);
@@ -474,6 +479,23 @@ impl Parser {
                 continue;
             } else {
                 match self.check_or_error(vec![TokenType::RightParen], "SyntaxError: invalid syntax, maybe a missing comma?".to_owned()) {
+                    Ok(_) => break,
+                    Err(e) => return Err(e),
+                }
+            }
+        }
+        Ok(args)
+    }
+
+    fn list_arguments(&mut self) -> Result<Vec<Expr>, PyError> {
+        let mut args = Vec::new();
+        while !self.check_advance(vec![TokenType::RightBracket]) {
+            args.push(self.expression()?);
+            if self.check_advance(vec![TokenType::Comma]) {
+                // NOTE: this allows e.g. [1,], but python allows it too so no matter
+                continue;
+            } else {
+                match self.check_or_error(vec![TokenType::RightBracket], "SyntaxError: invalid syntax, maybe a missing comma?".to_owned()) {
                     Ok(_) => break,
                     Err(e) => return Err(e),
                 }
