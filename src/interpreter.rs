@@ -193,11 +193,19 @@ impl Interpreter {
                 let cond = self.eval_expr(c)?.to_bool();
                 if cond {
                     for st in t {
-                        self.interpret_stmt(st)?;
+                        let res = self.interpret_stmt(st);
+                        match res {
+                            Ok(None) => continue,
+                            _ => return res,
+                        }
                     }
                 } else if let Some(stmts) = e {
                     for st in stmts {
-                        self.interpret_stmt(st)?;
+                        let res = self.interpret_stmt(st);
+                        match res {
+                            Ok(None) => continue,
+                            _ => return res,
+                        }
                     }
                 }
                 Ok(None)
@@ -205,7 +213,11 @@ impl Interpreter {
             Stmt::While(c, b) => {
                 while self.eval_expr(c.clone())?.to_bool() {
                     for st in b.clone() {
-                        self.interpret_stmt(st)?;
+                        let res = self.interpret_stmt(st);
+                        match res {
+                            Ok(None) => continue,
+                            _ => return res,
+                        }
                     }
                 }
                 Ok(None)
