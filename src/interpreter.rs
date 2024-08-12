@@ -281,7 +281,14 @@ impl Interpreter {
 
         match op.ty {
             BiOpType::Plus => match (left, right) {
-                (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a + b)),
+                (Value::Int(a), Value::Int(b)) => {
+                    let res = a.checked_add(b).ok_or(PyError {
+                        msg: "OverflowError: attempted to add with overflow".to_owned(),
+                        line: op.line,
+                        column: op.column,
+                    })?;
+                    Ok(Value::Int(res))
+                }
                 (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 + b)),
                 (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a + b as f64)),
                 (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a + b)),
@@ -321,7 +328,14 @@ impl Interpreter {
                 }),
             },
             BiOpType::Times => match (left, right) {
-                (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a * b)),
+                (Value::Int(a), Value::Int(b)) => {
+                    let res = a.checked_mul(b).ok_or(PyError {
+                        msg: "OverflowError: attempted to multiply with overflow".to_owned(),
+                        line: op.line,
+                        column: op.column,
+                    })?;
+                    Ok(Value::Int(res))
+                }
                 (Value::Int(a), Value::Float(b)) => Ok(Value::Float(a as f64 * b)),
                 (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a * b as f64)),
                 (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a * b)),
