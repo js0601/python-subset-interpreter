@@ -3,15 +3,20 @@
 This is a tree-walk interpreter written in Rust for a subset of Python, developed as a part of my bachelor's thesis.
 
 ## Usage
-[Install Cargo](https://doc.rust-lang.org/book/ch01-01-installation.html)
+First [install Cargo](https://doc.rust-lang.org/book/ch01-01-installation.html).
 
-Inside the project directory run:
+Clone the project:
 ```
-cargo run [path]
+git clone https://github.com/js0601/python-subset-interpreter.git
 ```
-to run with the specified file (e.g. examples/fib_list.py).
+
+Change into the project directory and run:
+```
+cargo run --release [path]
+```
+to build and run with the specified file (e.g. examples/fib_list.py) or
 
 ```
-cargo run
+cargo run --release
 ```
-to run the REPL.
+to use the (very basic) REPL.
