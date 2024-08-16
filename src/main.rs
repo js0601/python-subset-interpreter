@@ -63,7 +63,7 @@ fn run(code: String) {
     } else {
         return;
     }
-    println!("\n{stmts:?}\n");
+    // println!("\n{stmts:?}\n");
 
     interpreter::interpret(stmts);
 }

@@ -184,9 +184,18 @@ impl Interpreter {
                 println!("{val}");
                 Ok(None)
             }
-            Stmt::Assign(n, e) => {
+            Stmt::AssignVar(n, e) => {
                 let val = self.eval_expr(e)?;
                 self.env.assign_var(n.name, val);
+                Ok(None)
+            }
+            Stmt::AssignList(n, i, e) => {
+                // NOTE: not very pretty as well but does its job
+                // also doesn't work with multi dimensional lists since it doesn't actually modify the list but reassigns it
+                let (mut list, idx) = self.list_and_idx(n.clone(), i)?;
+                let val = self.eval_expr(e)?;
+                list[idx as usize] = val;
+                self.env.assign_var(n.name, Value::List(list));
                 Ok(None)
             }
             Stmt::If(c, t, e) => {
@@ -507,6 +516,13 @@ impl Interpreter {
     }
 
     fn eval_access(&mut self, name: Name, idx_ex: Expr) -> Result<Value, PyError> {
+        let (list, idx) = self.list_and_idx(name, idx_ex)?;
+
+        Ok(list[idx as usize].clone())
+    }
+
+    // helper for list access and list element assign to check for list and idx validity
+    fn list_and_idx(&mut self, name: Name, idx_ex: Expr) -> Result<(Vec<Value>, i128), PyError> {
         let idx_val = self.eval_expr(idx_ex)?;
         let idx;
         if let Value::Int(i) = idx_val {
@@ -549,6 +565,6 @@ impl Interpreter {
             });
         }
 
-        Ok(list[idx as usize].clone())
+        Ok((list, idx))
     }
 }

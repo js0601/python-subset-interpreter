@@ -2,7 +2,8 @@
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
-    Assign(Name, Expr),
+    AssignVar(Name, Expr),
+    AssignList(Name, Expr, Expr),
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     While(Expr, Vec<Stmt>),
     FunDecl(Name, Vec<Name>, Vec<Stmt>),

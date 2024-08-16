@@ -2,7 +2,8 @@ file          -> stmt* EOF
 
 stmt          -> exprStmt
                | printStmt
-               | assignStmt
+               | assignVarStmt
+               | assignListStmt
                | ifStmt
                | whileStmt
                | funDecl
@@ -10,7 +11,8 @@ stmt          -> exprStmt
 
 exprStmt      -> expr "\n"
 printStmt     -> "print" "(" expr ")" "\n"
-assignStmt    -> IDENTIFIER "=" expr "\n"
+assignVarStmt -> IDENTIFIER "=" expr "\n"
+assignLsStmt  -> IDENTIFIER "[" expr "]" "=" expr "\n"
 ifStmt        -> "if" expr ":" block ("else" ":" block)?
 whileStmt     -> "while" expr ":" block
 funDecl       -> "def" IDENTIFIER "(" parameters? ")" ":" block

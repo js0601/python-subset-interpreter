@@ -47,7 +47,7 @@ impl Parser {
     /////////////
     // see grammar.txt
 
-    // stmt -> exprStmt | printStmt | assignStmt | ifStmt | whileStmt | funDecl
+    // stmt -> exprStmt | printStmt | assignVarStmt | assignLsStmt | ifStmt | whileStmt | funDecl
     fn statement(&mut self) -> Result<Stmt, PyError> {
         if self.check_advance(vec![TokenType::Print]) {
             return self.print_statement();
@@ -55,7 +55,26 @@ impl Parser {
         // only go to assignStmt if there is an id followed by =
         if self.check_advance(vec![TokenType::Identifier("".to_owned())]) {
             if self.check_advance(vec![TokenType::Equal]) {
-                return self.assign_statement();
+                return self.assign_var_statement();
+            } else {
+                // needed so idx points back at identifier and doesn't skip it
+                self.current_idx -= 1;
+            }
+        }
+        // not very pretty I fear
+        if self.check_advance(vec![TokenType::Identifier("".to_owned())]) {
+            if self.check_advance(vec![TokenType::LeftBracket]) {
+                let id = &self.tokens[self.current_idx - 2];
+                let name = Name { name: id.value.to_owned(), line: id.line, column: id.column };
+                let idx = self.expression()?;
+                self.check_or_error(vec![TokenType::RightBracket], "SyntaxError: expected closing bracket, found missing or unexpected token".to_owned())?;
+                if self.check_advance(vec![TokenType::Equal]) {
+                    return self.assign_list_statement(name, idx);
+                } else {
+                    self.current_idx -= 1;
+                    // NOTE: technically breaks something like a random "a[1] + 1" but I mean come on who just writes random expression statements in their code
+                    return Ok(Stmt::Expr(Expr::ListAccess(name, Box::new(idx))))
+                }
             } else {
                 // needed so idx points back at identifier and doesn't skip it
                 self.current_idx -= 1;
@@ -96,8 +115,8 @@ impl Parser {
         Ok(Stmt::Print(ex))
     }
 
-    // assignStmt -> IDENTIFIER "=" expr "\n"
-    fn assign_statement(&mut self) -> Result<Stmt, PyError> {
+    // assignVarStmt -> IDENTIFIER "=" expr "\n"
+    fn assign_var_statement(&mut self) -> Result<Stmt, PyError> {
         // guaranteed to be identifier because of ifs in statement()
         let id = &self.tokens[self.current_idx - 2];
         let name = Name {name: id.value.to_owned(), line: id.line, column: id.column };
@@ -105,7 +124,15 @@ impl Parser {
         let ex = self.expression()?;
         self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: unexpected or missing token after statement (expected newline)".to_owned())?;
 
-        Ok(Stmt::Assign(name, ex))
+        Ok(Stmt::AssignVar(name, ex))
+    }
+
+    // assignLsStmt -> IDENTIFIER "[" expr "]" "=" expr "\n"
+    fn assign_list_statement(&mut self, name: Name, idx: Expr) -> Result<Stmt, PyError> {
+        let ex = self.expression()?;
+        self.check_or_error(vec![TokenType::EndOfLine], "SyntaxError: unexpected or missing token after statement (expected newline)".to_owned())?;
+
+        Ok(Stmt::AssignList(name, idx, ex))
     }
 
     // ifStmt -> "if" expr ":" block ("else" ":" block)?
