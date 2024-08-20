@@ -3,7 +3,7 @@ file          -> stmt* EOF
 stmt          -> exprStmt
                | printStmt
                | assignVarStmt
-               | assignListStmt
+               | assignLsStmt
                | ifStmt
                | whileStmt
                | funDecl
